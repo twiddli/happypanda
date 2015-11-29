@@ -1265,6 +1265,11 @@ class Gallery:
 		self._cache_id = 0 # used by custom delegate to cache profile
 		self.state = 0
 
+		# gallerycontainer stuff
+		self.prev_sibling = None
+		self.next_sibling = None
+		self.containers = []
+
 	def set_defaults(self):
 		if not self.type:
 			self.type = "Other"
@@ -1550,6 +1555,130 @@ class Chapter:
 		add_method_queue(GalleryDB.modify_gallery, True, self.gallery.id, times_read=self.gallery.times_read,
 							   last_read=self.gallery.last_read)
 
+class GalleryContainer:
+	"""
+	A container for galleries
+	Acts like a list of galleries.
+
+	Iterable returns galleries
+
+	Attrs:
+
+	title <- title of container
+	tags -> tags of all galleries in container
+
+	"""
+
+	def __init__(self, id=None, gallery=None):
+		self._id = id
+		self._data = []
+		self.title = ""
+
+		if gallery:
+			pass
+
+	def _update(self, idx):
+		if self._data:
+			try:
+				self._data[idx-1].next_sibling = self._data[idx+1]
+			except IndexError:
+				try:
+					self._data[idx-1].next_sibling = None
+				except IndexError:
+					pass
+
+			try:
+				self._data[idx+1].prev_sibling = self._data[idx-1]
+			except IndexError:
+				try:
+					self._data[idx+1].prev_sibling = None
+				except IndexError:
+					pass
+
+	@property
+	def tags(self):
+		ns_tags = {}
+		for g in self:
+			for ns in g.tags:
+				if not ns in ns_tags:
+					ns_tags[ns] = []
+				for t in g.tags[ns]:
+					if not t in ns_tags[ns]:
+						ns_tags[ns].append(t)
+		return ns_tags
+
+	def add_gallery(self, g):
+		if self._data:
+			g.prev_sibling = self._data[len(self._data)-1]
+			self._data[len(self._data)-1].next_sibling = g
+			self._data.append(g)
+		else:
+			self._data.append(g)
+
+	def count(self):
+		return len(self)
+
+	def remove(self, g):
+		assert isinstance(idx, int), "index must be integer"
+		idx = None
+		for n, x in enumerate(self):
+			if x == g:
+				idx = n
+		if not idx:
+			raise ValueError
+		self._update(idx)
+
+		self._data.remove(g)
+
+	def pop(self, idx):
+		assert isinstance(idx, int), "index must be integer"
+		self._update(idx)
+
+		return self._data.pop(idx)
+
+	def __len__(self):
+		return len(self._data)
+
+	def __getitem__(self, idx):
+		return self._data[idx]
+
+	def __setitem__(self, idx, value):
+		assert isinstance(idx, int), "Index must be an integer"
+		assert isinstance(value, Gallery), "Value must be an instantiated Gallery class"
+		
+		if self._data:
+			value.prev_sibling = self._data[idx-1]
+			self._data[idx-1].next_sibling = value
+			self._data[idx] = value
+		else:
+			self._data[idx] = value
+
+	def __delitem__(self, idx):
+		assert isinstance(idx, int), "index must be integer"
+		self._update(idx)
+
+		del self._data[idx]
+
+	def __iter__(self):
+		return iter(self._data)
+
+	def __bool__(self):
+		return bool(self._data)
+
+	def __str__(self):
+		s = "ID: {}\nTitle: {}\n Gallery Count: {}".format(self._id, self.title, self.count())
+
+		for c in self:
+			s += '\n' + '{}'.format(c)
+		if not s:
+			return '{}'
+		return s
+
+	def __contains__(self, g):
+		return g in self._data
+
+
+
 class ChaptersContainer:
 	"""
 	A container for chapters.
@@ -1590,6 +1719,49 @@ class ChaptersContainer:
 		if db:
 			# TODO: implement this
 			pass
+
+	def count(self):
+		return len(self)
+
+	def pop(self, value, default=None):
+		return self._data.pop(key, default)
+
+	def __len__(self):
+		return len(self._data)
+
+	def __getitem__(self, key):
+		return self._data[key]
+
+	def __setitem__(self, key, value):
+		assert isinstance(key, int), "Key must be a chapter number"
+		assert isinstance(value, Chapter), "Value must be an instantiated Chapter class"
+		
+		if value.gallery != self.parent:
+			raise app_constants.ChapterWrongParentGallery
+		self._data[key] = value
+
+	def __delitem__(self, key):
+		del self._data[key]
+
+	def __iter__(self):
+		return iter([self[c] for c in sorted(self._data.keys())])
+
+	def __bool__(self):
+		return bool(self._data)
+
+	def __str__(self):
+		s = ""
+		for c in self:
+			s += '\n' + '{}'.format(c)
+		if not s:
+			return '{}'
+		return s
+
+	def __contains__(self, key):
+		if key.gallery == self.parent and key in [self.data[c] for c in self._data]:
+			return True
+		return False
+
 
 	def create_chapter(self, number=None):
 		"""
