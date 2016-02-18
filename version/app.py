@@ -35,7 +35,7 @@ from PyQt5.QtWidgets import (QMainWindow, QListView,
 							 QListWidget, QListWidgetItem, QToolTip,
 							 QProgressBar, QToolButton, QSystemTrayIcon,
 							 QShortcut, QGraphicsBlurEffect, QTableWidget,
-							 QTableWidgetItem)
+							 QTableWidgetItem, QTreeView)
 
 import app_constants
 import misc
@@ -447,6 +447,12 @@ class AppWindow(QMainWindow):
 	def manga_display(self):
 		"initiates the manga view and related things"
 
+		self._testmodel = gallery.ProperModel(self)
+		self._testview = QTreeView()
+		self._testview.setModel(self._testmodel)
+		self._testview.clicked.connect(lambda idx: print(idx.data(Qt.DisplayRole)))
+		self._testview.show()
+
 		#list view
 		self.manga_list_view = gallery.MangaView(self)
 
@@ -475,7 +481,6 @@ class AppWindow(QMainWindow):
 		self.manga_list_view.gallery_model.ADD_MORE.connect(self.data_fetch_spinner.show)
 		self.manga_list_view.gallery_model.db_emitter.START.connect(self.data_fetch_spinner.show)
 		self.manga_list_view.gallery_model.ADDED_ROWS.connect(self.data_fetch_spinner.before_hide)
-		self.manga_list_view.gallery_model.db_emitter.CANNOT_FETCH_MORE.connect(self.data_fetch_spinner.before_hide)
 
 		## deleting spinner
 		#self.gallery_delete_spinner = misc.Spinner(self)
@@ -614,26 +619,10 @@ class AppWindow(QMainWindow):
 		# debug specfic code
 		if app_constants.DEBUG:
 			def debug_func():
-				from PIL import Image
-				from PyQt5.QtGui import QImageReader, QImage
-				m = QMessageBox(self)
-				m.setText("{}".format(QImageReader.supportedImageFormats()))
-				m.exec()
-				f_n = 'horopic.jpg'
-				self._lbl = QLabel()
-				im_data = utils.PToQImageHelper(f_n)
-				pic = image = QImage(im_data['data'], im_data['im'].size[0], im_data['im'].size[1], im_data['format'])
-				if im_data['colortable']:
-					image.setColorTable(im_data['colortable'])
-				print("P is null:", pic.isNull())
-				im = Image.open(f_n)
-				im.verify()
-				print("Format:", im.format)
-				print("Dic:", im.info)
-				print("Mode:", im.mode)
-				if pic.isNull():
-					pic = QImage()
-					print("New Load P", pic.load(f_n))
+				
+				self._testmodel._setup_data()
+				from modeltest import ModelTest
+				self.modeltest = ModelTest(self._testmodel, self)
 				#self._lbl.setPixmap(pic)
 				#self._lbl.show()
 		

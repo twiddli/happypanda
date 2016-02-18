@@ -338,7 +338,7 @@ class GalleryLists(QListWidget):
 		new_item.setFlags(new_item.flags() | Qt.ItemIsEditable)
 		new_item.setIcon(QIcon(app_constants.LIST_PATH))
 		self.insertItem(0, new_item)
-		if name:
+		if name != None:
 			new_item.setText(name)
 			self._add_new_list(gallery_list=gallery_list)
 		else:

@@ -1019,7 +1019,7 @@ class ListDB(DBBase):
 			ListDB.modify_list(gallery_list, True, True, True, True)
 		else:
 			c = cls.execute(cls, 'INSERT INTO list(list_name, list_filter, profile, type) VALUES(?, ?, ?, ?)',
-				   (gallery_list.name, gallery_list.filter, str.encode(gallery_list.type), gallery_list.type))
+				   (gallery_list.name, gallery_list.filter, str.encode(gallery_list.profile), gallery_list.type))
 			gallery_list._id = c.lastrowid
 
 		ListDB.add_gallery_to_list(gallery_list.galleries(), gallery_list)
@@ -1368,7 +1368,7 @@ class GalleryList:
 		self.profile = ''
 		self.type = self.REGULAR
 		self.filter = filter
-		self._galleries = set()
+		self._galleries = utils.OrderedSet()
 		self._ids_chache = []
 		self.add_gallery(list_of_galleries, _db)
 
@@ -1418,6 +1418,15 @@ class GalleryList:
 		"returns a list with all galleries in list"
 		return list(self._galleries)
 
+	def __len__(self):
+		return self.count()
+
+	def __bool__(self):
+		return self != None
+
+	def count(self):
+		return len(self._galleries)
+
 	def __contains__(self, g):
 		return utils.b_search(self._ids_chache, g.id)
 
@@ -1443,6 +1452,12 @@ class GalleryList:
 
 	def __lt__(self, other):
 		return self.name < other.name
+
+	def __getitem__(self, key):
+		return self._galleries[key]
+
+	def __setitem__(self, key, value):
+		raise NotImplementedError
 
 class Gallery:
 	"""

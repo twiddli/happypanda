@@ -20,7 +20,8 @@ from PyQt5.QtCore import (Qt, QAbstractListModel, QModelIndex, QVariant,
 						  QTimer, QPointF, QSortFilterProxyModel,
 						  QAbstractTableModel, QItemSelectionModel,
 						  QPoint, QRectF, QDate, QDateTime, QObject,
-						  QEvent, QSizeF, QMimeData, QByteArray)
+						  QEvent, QSizeF, QMimeData, QByteArray,
+						  QAbstractItemModel)
 from PyQt5.QtGui import (QPixmap, QBrush, QColor, QPainter, 
 						 QPen, QTextDocument,
 						 QMouseEvent, QHelpEvent,
@@ -50,49 +51,136 @@ log_w = log.warning
 log_e = log.error
 log_c = log.critical
 
-# attempt at implementing treemodel
-#class TreeNode:
-#	def __init__(self, parent, row):
-#		self.parent = parent
-#		self.row = row
-#		self.subnodes = self._get_children()
+class TreeItem:
+	def __init__(self, gallery_list=None, parent=None):
+		self._child_items = []
+		self._data_items = gallery_list
+		self._parent_item = parent
 
-#	def _get_children(self):
-#		raise NotImplementedError()
+	def appendChild(self, child):
+		self._child_items.append(child)
 
-#class GalleryInfoModel(QAbstractItemModel):
-#	def __init__(self, parent=None):
-#		super().__init__(parent)
-#		self.root_nodes = self._get_root_nodes()
+	def child(self, row):
+		try:
+			return self._child_items[row]
+		except IndexError:
+			return None
 
-#	def _get_root_nodes(self):
-#		raise NotImplementedError()
+	def childCount(self):
+		return len(self._child_items)
 
-#	def index(self, row, column, parent):
-#		if not parent.isValid():
-#			return self.createIndex(row, column, self.root_nodes[row])
-#		parent_node = parent.internalPointer()
-#		return self.createIndex(row, column, parent_node[row])
+	def columnCount(self):
+		return 1
 
-#	def parent(self, index):
-#		if not index.isValid():
-#			return QModelIndex()
+	def data(self, column):
+		try:
+			if isinstance(self._data_items, gallerydb.GalleryList):
+				return self._data_items
+			elif isinstance(self._data_items, gallerydb.Gallery):
+				return self._data_items
+			elif isinstance(self._data_items, gallerydb.Chapter):
+				return self._data_items
+			else:
+				return self._data_items[column]
+		except IndexError:
+			return None
 
-#		node = index.internalPointer()
-#		if not node.parent:
-#			return QModelIndex()
-#		else:
-#			return self.createIndex(node.parent.row, 0, node.parent)
+	def row(self):
+		if self._parent_item:
+			return self._parent_item._child_items.index(self)
+		return 0
 
-#	def reset(self):
-#		self.root_nodes = self._get_root_nodes()
-#		super().resetInternalData()
+	def parentItem(self):
+		return self._parent_item
 
-#	def rowCount(self, parent = QModelIndex()):
-#		if not parent.isValid():
-#			return len(self.root_nodes)
-#		node = parent.internalPointer()
-#		return len(node.subnodes)
+class GalleryTreeModel(QAbstractItemModel):
+	"Base Gallery Model"
+	def __init__(self, parent=None):
+		super().__init__(parent)
+		self._root_item = TreeItem(["Collection", "Gallery"])
+		self._setup = False
+
+	def columnCount(self, parent = QModelIndex()):
+		if parent.isValid():
+			return parent.internalPointer().columnCount()
+		else:
+			return self._root_item.columnCount()
+
+	def rowCount(self, parent = QModelIndex()):
+		
+		if parent.column() > 0:
+			return 0
+
+		if not parent.isValid():
+			parent_item = self._root_item
+		else:
+			parent_item = parent.internalPointer()
+
+		return parent_item.childCount()
+
+	def parent(self, index):
+
+		if not index.isValid():
+			return QModelIndex()
+
+		child_item = index.internalPointer()
+		parent_item = child_item.parentItem()
+		if parent_item == self._root_item:
+			return QModelIndex()
+
+		return self.createIndex(parent_item.row(), 0, parent_item)
+
+	def index(self, row, coloumn, parent = QModelIndex()):
+		if not self.hasIndex(row, coloumn, parent):
+			return QModelIndex()
+
+		if not parent.isValid():
+			parent_item = self._root_item
+		else:
+			parent_item = parent.internalPointer()
+
+		child_item = parent_item.child(row)
+		if child_item:
+			return self.createIndex(row, coloumn, child_item)
+		else:
+			return QModelIndex()
+
+	def headerData(self, section, orientation, role = Qt.DisplayRole):
+		if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+			return self._root_item.data(section)
+		return None
+
+	def flags(self, index):
+		if index.isValid():
+			return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+		return super().flags(index)
+
+	def data(self, index, role = Qt.DisplayRole):
+		assert isinstance(index, QModelIndex)
+		if not index.isValid():
+			return None
+
+		if role != Qt.DisplayRole:
+			return QVariant()
+
+		return index.internalPointer().data(index.column())
+
+	def _setup_data(self):
+		if not self._setup:
+			self.beginResetModel()
+			print(app_constants.GALLERY_LISTS)
+			for g_list in app_constants.GALLERY_LISTS:
+				r_item = TreeItem(g_list, self._root_item)
+				self._root_item.appendChild(r_item)
+				for g in g_list.galleries():
+					g_item = TreeItem(g, r_item)
+					r_item.appendChild(g_item)
+					for c in g.chapters:
+						c_item = TreeItem(c, g_item)
+						g_item.appendChild(c_item)
+			self.endResetModel()
+			self._setup = True
+		print(self.rowCount())
 
 class GallerySearch(QObject):
 	FINISHED = pyqtSignal()
