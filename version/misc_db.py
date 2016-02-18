@@ -455,12 +455,6 @@ class SideBarWidget(QFrame):
 		self.tags_layout = QVBoxLayout(self.tags_tree)
 		ns_tags_index = self.stacked_layout.addWidget(self.tags_tree)
 		self.ns_tags_btn.clicked.connect(lambda:self.stacked_layout.setCurrentIndex(ns_tags_index))
-		if parent.manga_list_view.gallery_model.db_emitter._finished:
-			self.tags_tree.setup_tags()
-			self.lists.setup_lists()
-		else:
-			parent.manga_list_view.gallery_model.db_emitter.DONE.connect(self.tags_tree.setup_tags)
-			parent.manga_list_view.gallery_model.db_emitter.DONE.connect(self.lists.setup_lists)
 
 		self.slide_animation = misc.create_animation(self, "maximumSize")
 		self.slide_animation.stateChanged.connect(self._slide_hide)

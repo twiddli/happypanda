@@ -1117,14 +1117,11 @@ class SettingsDialog(QWidget):
 				clear_cache = False
 				if clear_cache_confirm.exec() == QMessageBox.Yes:
 					clear_cache = True
-				gallerydb.DatabaseEmitter.RUN = False
-				def start_db_activity(): gallerydb.DatabaseEmitter.RUN = True
 				app_popup = AppDialog(self.parent_widget)
 				app_popup.info_lbl.setText("Regenerating thumbnails...")
 				app_popup.admin_db = gallerydb.AdminDB()
 				app_popup.admin_db.moveToThread(app_constants.GENERAL_THREAD)
 				app_popup.admin_db.DONE.connect(app_popup.admin_db.deleteLater)
-				app_popup.admin_db.DONE.connect(start_db_activity)
 				app_popup.admin_db.DATA_COUNT.connect(app_popup.prog.setMaximum)
 				app_popup.admin_db.PROGRESS.connect(app_popup.prog.setValue)
 				self.init_gallery_rebuild.connect(app_popup.admin_db.rebuild_thumbs)

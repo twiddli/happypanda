@@ -21,7 +21,7 @@ from PyQt5.QtCore import (Qt, QAbstractListModel, QModelIndex, QVariant,
 						  QAbstractTableModel, QItemSelectionModel,
 						  QPoint, QRectF, QDate, QDateTime, QObject,
 						  QEvent, QSizeF, QMimeData, QByteArray,
-						  QAbstractItemModel)
+						  QAbstractItemModel, QAbstractProxyModel)
 from PyQt5.QtGui import (QPixmap, QBrush, QColor, QPainter, 
 						 QPen, QTextDocument,
 						 QMouseEvent, QHelpEvent,
@@ -93,7 +93,7 @@ class TreeItem:
 	def parentItem(self):
 		return self._parent_item
 
-class GalleryTreeModel(QAbstractItemModel):
+class GalleryBaseModel(QAbstractItemModel):
 	"Base Gallery Model"
 	def __init__(self, parent=None):
 		super().__init__(parent)
@@ -344,9 +344,6 @@ class SortFilterModel(QSortFilterProxyModel):
 	def change_data(self, data):
 		self._CHANGE_SEARCH_DATA.emit(data)
 
-	def populate_data(self):
-		self.sourceModel().populate_data()
-
 	def status_b_msg(self, msg):
 		self.sourceModel().status_b_msg(msg)
 
@@ -358,7 +355,6 @@ class SortFilterModel(QSortFilterProxyModel):
 		self.beginInsertRows(index, position, position + rows - 1)
 		self.sourceModel().addRows(list_of_gallery, position, rows, index)
 		self.endInsertRows()
-		#self.modelReset.emit()
 
 	def insertRows(self, list_of_gallery, position=None,
 				rows=None, index = QModelIndex(), data_count=True):
@@ -368,7 +364,6 @@ class SortFilterModel(QSortFilterProxyModel):
 		self.sourceModel().insertRows(list_of_gallery, position, rows,
 								index, data_count)
 		self.endInsertRows()
-		#self.modelReset.emit()
 
 	def replaceRows(self, list_of_gallery, position, rows=1, index=QModelIndex()):
 		self.sourceModel().replaceRows(list_of_gallery, position, rows, index)
@@ -396,7 +391,7 @@ class SortFilterModel(QSortFilterProxyModel):
 			return False
 
 		g_list = pickle.loads(data.data("list/gallery").data())
-		item_g = index.data(GalleryModel.GALLERY_ROLE)
+		item_g = index.data(GalleryTableModel.GALLERY_ROLE)
 		# ignore false positive
 		for g in g_list:
 			if g.id == item_g.id:
@@ -420,7 +415,7 @@ class SortFilterModel(QSortFilterProxyModel):
 		data = QMimeData()
 		g_list = []
 		for idx in index_list:
-			g = idx.data(GalleryModel.GALLERY_ROLE)
+			g = idx.data(GalleryTableModel.GALLERY_ROLE)
 			if g != None:
 				g_list.append(g)
 		data.setData("list/gallery", QByteArray(pickle.dumps(g_list)))
@@ -437,7 +432,19 @@ class SortFilterModel(QSortFilterProxyModel):
 	def supportedDragActions(self):
 		return Qt.ActionMask
 
-class GalleryModel(QAbstractTableModel):
+class FlatModel(QSortFilterProxyModel):
+	def __init__(self, parent=None):
+		super().__init__(parent)
+
+	def filterAcceptsRow(self, source_row, parent_index):
+		if self.sourceModel():
+			index = self.sourceModel().index(source_row, 0, parent_index)
+			if isinstance(index.internalPointer(), gallerydb.Gallery):
+				return True
+		return False
+
+
+class GalleryTableModel(QAbstractProxyModel):
 	"""
 	Model for Model/View/Delegate framework
 	"""
@@ -449,6 +456,18 @@ class GalleryModel(QAbstractTableModel):
 	TIMES_READ_ROLE = Qt.UserRole+6
 	LAST_READ_ROLE = Qt.UserRole+7
 
+	_TITLE = app_constants.TITLE
+	_ARTIST = app_constants.ARTIST
+	_TAGS = app_constants.TAGS
+	_TYPE = app_constants.TYPE
+	_FAV = app_constants.FAV
+	_CHAPTERS = app_constants.CHAPTERS
+	_LANGUAGE = app_constants.LANGUAGE
+	_LINK = app_constants.LINK
+	_DESCR = app_constants.DESCR
+	_DATE_ADDED = app_constants.DATE_ADDED
+	_PUB_DATE = app_constants.PUB_DATE
+
 	ROWCOUNT_CHANGE = pyqtSignal()
 	STATUSBAR_MSG = pyqtSignal(str)
 	CUSTOM_STATUS_MSG = pyqtSignal(str)
@@ -458,37 +477,11 @@ class GalleryModel(QAbstractTableModel):
 
 	REMOVING_ROWS = False
 
-	def __init__(self, parent=None):
-		super().__init__(parent)
-		self.dataChanged.connect(lambda: self.status_b_msg("Edited"))
-		self.dataChanged.connect(lambda: self.ROWCOUNT_CHANGE.emit())
-		self.layoutChanged.connect(lambda: self.ROWCOUNT_CHANGE.emit())
+	def __init__(self, source_model):
+		super().__init__()
 		self.CUSTOM_STATUS_MSG.connect(self.status_b_msg)
-		self._TITLE = app_constants.TITLE
-		self._ARTIST = app_constants.ARTIST
-		self._TAGS = app_constants.TAGS
-		self._TYPE = app_constants.TYPE
-		self._FAV = app_constants.FAV
-		self._CHAPTERS = app_constants.CHAPTERS
-		self._LANGUAGE = app_constants.LANGUAGE
-		self._LINK = app_constants.LINK
-		self._DESCR = app_constants.DESCR
-		self._DATE_ADDED = app_constants.DATE_ADDED
-		self._PUB_DATE = app_constants.PUB_DATE
-
-		self._data_count = 0 # number of items added to model
-		self.db_emitter = gallerydb.DatabaseEmitter()
-		self.db_emitter.GALLERY_EMITTER.connect(lambda a: self.insertRows(a, emit_statusbar=False))
-
-	def populate_data(self, galleries):
-		"Populates the model in a timely manner"
-		t = 0
-		for pos, gallery in enumerate(galleries):
-			t += 100
-			if not gallery.valid:
-				reasons = gallery.invalidities()
-			else:
-				QTimer.singleShot(t, functools.partial(self.insertRows, [gallery], pos))
+		self._source_root_index = QModelIndex()
+		#self.setSourceModel(source_model)
 
 	def status_b_msg(self, msg):
 		self.STATUSBAR_MSG.emit(msg)
@@ -541,8 +534,6 @@ class GalleryModel(QAbstractTableModel):
 					return qdate_g_pdt
 				else:
 					return 'No date set'
-
-		# TODO: name all these roles and put them in app_constants...
 
 		if role == Qt.DisplayRole:
 			return column_checker()
@@ -639,7 +630,7 @@ class GalleryModel(QAbstractTableModel):
 
 	def rowCount(self, index = QModelIndex()):
 		if not index.isValid():
-			return self._data_count
+			return
 		else:
 			return 0
 
@@ -675,11 +666,6 @@ class GalleryModel(QAbstractTableModel):
 			elif section == self._PUB_DATE:
 				return 'Published'
 		return section + 1
-	#def flags(self, index):
-	#	if not index.isValid():
-	#		return Qt.ItemIsEnabled
-	#	return Qt.ItemFlags(QAbstractListModel.flags(self, index) |
-	#				  Qt.ItemIsEditable)
 
 	def addRows(self, list_of_gallery, position=None,
 				rows=1, index = QModelIndex()):
@@ -691,7 +677,6 @@ class GalleryModel(QAbstractTableModel):
 		if not position:
 			log_d('Add rows: No position specified')
 			position = len(self._data)
-		self._data_count += len(list_of_gallery)
 		self.beginInsertRows(QModelIndex(), position, position + rows - 1)
 		log_d('Add rows: Began inserting')
 		gallerydb.GalleryDB.begin()
@@ -703,7 +688,6 @@ class GalleryModel(QAbstractTableModel):
 		gallerydb.add_method_queue(gallerydb.GalleryDB.end, True)
 		log_d('Add rows: Finished inserting')
 		self.endInsertRows()
-		gallerydb.add_method_queue(self.db_emitter.update_count, True)
 		self.CUSTOM_STATUS_MSG.emit("Added item(s)")
 		self.ROWCOUNT_CHANGE.emit()
 		self.ADDED_ROWS.emit()
@@ -717,12 +701,9 @@ class GalleryModel(QAbstractTableModel):
 		self.ADD_MORE.emit()
 		position = len(self._data) if not position else position
 		rows = len(list_of_gallery) if not rows else 0
-		if data_count:
-			self._data_count += len(list_of_gallery)
 		self.beginInsertRows(QModelIndex(), position, position + rows - 1)
 		self._data.extend(list_of_gallery)
 		self.endInsertRows()
-		gallerydb.add_method_queue(self.db_emitter.update_count, True)
 		if emit_statusbar:
 			self.CUSTOM_STATUS_MSG.emit("Added item(s)")
 		self.ROWCOUNT_CHANGE.emit()
@@ -738,20 +719,12 @@ class GalleryModel(QAbstractTableModel):
 
 	def removeRows(self, position, rows=1, index=QModelIndex()):
 		"Deletes gallery data from the model data list. OBS: doesn't touch DB!"
-		self._data_count -= rows
 		self.beginRemoveRows(QModelIndex(), position, position + rows - 1)
 		for r in range(rows):
 			del self._data[position]
 		self.endRemoveRows()
-		gallerydb.add_method_queue(self.db_emitter.update_count, False)
 		self.ROWCOUNT_CHANGE.emit()
 		return True
-
-	def canFetchMore(self, index):
-		return self.db_emitter.can_fetch_more()
-
-	def fetchMore(self, index):
-		self.db_emitter.fetch_more()
 
 class GridDelegate(QStyledItemDelegate):
 	"A custom delegate for the model/view framework"
@@ -1025,7 +998,7 @@ class GridDelegate(QStyledItemDelegate):
 				return rect
 
 			if option.state & QStyle.State_MouseOver or\
-			    option.state & QStyle.State_Selected:
+				option.state & QStyle.State_Selected:
 				title_layout = misc.text_layout(title, w, self.title_font, self.title_font_m)
 				artist_layout = misc.text_layout(artist, w, self.artist_font, self.artist_font_m)
 				t_h = title_layout.boundingRect().height()
@@ -1179,8 +1152,7 @@ class MangaView(QListView):
 		self.setIconSize(QSize(self.manga_delegate.W, self.manga_delegate.H))
 		self.setSelectionBehavior(self.SelectItems)
 		self.setSelectionMode(self.ExtendedSelection)
-		self.gallery_model = GalleryModel(parent)
-		self.gallery_model.db_emitter.DONE.connect(self.sort_model.setup_search)
+		self.gallery_model = GalleryTableModel(parent)
 		self.sort_model.change_model(self.gallery_model)
 		self.sort_model.sort(0)
 		self.sort_model.ROWCOUNT_CHANGE.connect(self.gallery_model.ROWCOUNT_CHANGE.emit)
@@ -1295,23 +1267,23 @@ class MangaView(QListView):
 			self.sort_model.sort(0, Qt.AscendingOrder)
 			self.current_sort = 'title'
 		elif name == 'artist':
-			self.sort_model.setSortRole(GalleryModel.ARTIST_ROLE)
+			self.sort_model.setSortRole(GalleryTableModel.ARTIST_ROLE)
 			self.sort_model.sort(0, Qt.AscendingOrder)
 			self.current_sort = 'artist'
 		elif name == 'date_added':
-			self.sort_model.setSortRole(GalleryModel.DATE_ADDED_ROLE)
+			self.sort_model.setSortRole(GalleryTableModel.DATE_ADDED_ROLE)
 			self.sort_model.sort(0, Qt.DescendingOrder)
 			self.current_sort = 'date_added'
 		elif name == 'pub_date':
-			self.sort_model.setSortRole(GalleryModel.PUB_DATE_ROLE)
+			self.sort_model.setSortRole(GalleryTableModel.PUB_DATE_ROLE)
 			self.sort_model.sort(0, Qt.DescendingOrder)
 			self.current_sort = 'pub_date'
 		elif name == 'times_read':
-			self.sort_model.setSortRole(GalleryModel.TIMES_READ_ROLE)
+			self.sort_model.setSortRole(GalleryTableModel.TIMES_READ_ROLE)
 			self.sort_model.sort(0, Qt.DescendingOrder)
 			self.current_sort = 'times_read'
 		elif name == 'last_read':
-			self.sort_model.setSortRole(GalleryModel.LAST_READ_ROLE)
+			self.sort_model.setSortRole(GalleryTableModel.LAST_READ_ROLE)
 			self.sort_model.sort(0, Qt.DescendingOrder)
 			self.current_sort = 'last_read'
 

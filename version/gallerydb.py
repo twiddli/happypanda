@@ -987,6 +987,7 @@ class ListDB(DBBase):
 
 		c = cls.execute(cls, 'SELECT list_id FROM series_list_map WHERE series_id=?', (gallery.id,))
 		list_rows = [x['list_id'] for x in c.fetchall()]
+
 		for l in app_constants.GALLERY_LISTS:
 			if l._id in list_rows:
 				l.add_gallery(gallery, False)
@@ -1360,7 +1361,7 @@ class GalleryList:
 	- scan <- scans for galleries matching the listfilter and adds them to gallery
 	"""
 	# types
-	REGULAR, COLLECTION = range(2)
+	REGULAR, COLLECTION, ROOT = range(3)
 
 	def __init__(self, name, list_of_galleries=[], filter=None, id=None, _db=True):
 		self._id = id # shouldnt ever be touched
@@ -2067,72 +2068,30 @@ class AdminDB(QObject):
 				self.PROGRESS.emit(n)
 		self.DONE.emit(True)
 
-class DatabaseEmitter(QObject):
+class DBScheduler(QObject):
 	"""
-	Fetches and emits database records
-	START: emitted when fetching from DB occurs
-	DONE: emitted when the initial fetching from DB finishes
+	Schedule database operations
 	"""
-	GALLERY_EMITTER = pyqtSignal(list)
-	START = pyqtSignal()
-	DONE = pyqtSignal()
-	CANNOT_FETCH_MORE = pyqtSignal()
-	COUNT_CHANGE = pyqtSignal()
-	_DB = DBBase()
-
-	RUN = False
+	loading_finished = pyqtSignal()
+	_loading = [False]
 
 	def __init__(self):
 		super().__init__()
+
+	@property
+	def loading(self):
+		return self._loading[0]
+
+	def load(self):
+		"Only to be used once"
 		ListDB.init_lists()
-		self._current_data = app_constants.GALLERY_DATA
-		self._fetch_count = 500
-		self._offset = 0
-		self._fetching = False
-		self.count = 0
-		self._finished = False
-		self.update_count()
+		self._loading[0] = True
+		app_constants.GALLERY_DATA = GalleryDB.get_all_gallery()
+		self._loading[0] = False
+		self.loading_finished.emit()
 
-	def update_count(self):
-		if not self._fetching:
-			self._fetching = True
-			oldc = self.count
-			self.count = GalleryDB.gallery_count()
-			if oldc != self.count:
-				self.COUNT_CHANGE.emit()
-			self._fetching = False
-
-	def can_fetch_more(self):
-		if len(self._current_data) < self.count:
-			return True
-		else:
-			if not self._finished:
-				self._finished = True
-				self.DONE.emit()
-			self.CANNOT_FETCH_MORE.emit()
-			return False
-
-	def fetch_more(self):
-		if not self.RUN:
-			return
-		self.START.emit()
-		def get_records():
-			self._fetching = True
-			remaining = self.count - len(self._current_data)
-			rec_to_fetch = min(remaining, self._fetch_count)
-			c = add_method_queue(self._DB.execute, False, 'SELECT * FROM series LIMIT {}, {}'.format(self._offset, rec_to_fetch))
-			self._offset += rec_to_fetch
-			if c:
-				new_data = c.fetchall()
-				gallery_list = add_method_queue(GalleryDB.gen_galleries, False, new_data)
-				#self._current_data.extend(gallery_list)
-				if gallery_list:
-					self.GALLERY_EMITTER.emit(gallery_list)
-			self._fetching = False
-		if not self._fetching:
-			# TODO: redo this?
-			thread = threading.Thread(target=get_records, name='DatabaseEmitter')
-			thread.start()
+	def schedule_delete(list_of_galleries):
+		pass
 
 
 if __name__ == '__main__':

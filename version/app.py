@@ -35,7 +35,7 @@ from PyQt5.QtWidgets import (QMainWindow, QListView,
 							 QListWidget, QListWidgetItem, QToolTip,
 							 QProgressBar, QToolButton, QSystemTrayIcon,
 							 QShortcut, QGraphicsBlurEffect, QTableWidget,
-							 QTableWidgetItem, QTreeView)
+							 QTableWidgetItem, QTreeView, QTableView)
 
 import app_constants
 import misc
@@ -66,6 +66,7 @@ class AppWindow(QMainWindow):
 	admin_db_method_invoker = pyqtSignal(object)
 	db_activity_checker = pyqtSignal()
 	graphics_blur = QGraphicsBlurEffect()
+	_load_db = pyqtSignal()
 
 	def __init__(self, disable_excepthook=False):
 		super().__init__()
@@ -74,6 +75,11 @@ class AppWindow(QMainWindow):
 		app_constants.GENERAL_THREAD = QThread(self)
 		app_constants.GENERAL_THREAD.finished.connect(app_constants.GENERAL_THREAD.deleteLater)
 		app_constants.GENERAL_THREAD.start()
+		self._db_scheduler = gallerydb.DBScheduler()
+		self._db_scheduler.moveToThread(app_constants.GENERAL_THREAD)
+		self._load_db.connect(self._db_scheduler.load)
+		if app_constants.FIRST_TIME_LEVEL == app_constants.INTERNAL_LEVEL:
+			self._load_db.emit()
 		self.setAcceptDrops(True)
 		self.initUI()
 		self.start_up()
@@ -135,7 +141,6 @@ class AppWindow(QMainWindow):
 			settings.save()
 
 		def done(status=True):
-			gallerydb.DatabaseEmitter.RUN = True
 			if app_constants.FIRST_TIME_LEVEL != app_constants.INTERNAL_LEVEL:
 				normalize_first_time()
 			else:
@@ -152,10 +157,10 @@ class AppWindow(QMainWindow):
 				app_constants.MONITOR_PATHS and all(app_constants.MONITOR_PATHS):
 				self.init_watchers()
 				if app_constants.LOOK_NEW_GALLERY_STARTUP:
-					if self.manga_list_view.gallery_model.db_emitter.count == app_constants.GALLERY_DATA:
-						self.scan_for_new_galleries()
+					if self._db_scheduler.loading:
+						self._db_scheduler.loading_finished.connect(self.scan_for_new_galleries)
 					else:
-						self.manga_list_view.gallery_model.db_emitter.DONE.connect(self.scan_for_new_galleries)
+						self.scan_for_new_galleries()
 			self.download_manager = pewnet.Downloader()
 			app_constants.DOWNLOAD_MANAGER = self.download_manager
 			self.download_manager.start_manager(4)
@@ -419,7 +424,6 @@ class AppWindow(QMainWindow):
 		self.temp_timer = QTimer()
 
 		self.manga_list_view.gallery_model.ROWCOUNT_CHANGE.connect(self.stat_row_info)
-		self.manga_list_view.gallery_model.db_emitter.COUNT_CHANGE.connect(self.stat_row_info)
 		self.manga_list_view.gallery_model.STATUSBAR_MSG.connect(self.stat_temp_msg)
 		self.manga_list_view.STATUS_BAR_MSG.connect(self.stat_temp_msg)
 		self.manga_table_view.STATUS_BAR_MSG.connect(self.stat_temp_msg)
@@ -436,22 +440,34 @@ class AppWindow(QMainWindow):
 
 	def stat_row_info(self):
 		r = self.get_current_view().model().rowCount()
-		t = self.get_current_view().gallery_model.db_emitter.count
 		g_l = self.get_current_view().sort_model.current_gallery_list
 		if g_l:
 			self.stat_info.setText(
-				"<b><i>{}</i></b> | Loaded {} of {} ".format(g_l.name, r, t))
+				"<b><i>{}</i></b> | Showing {} ".format(g_l.name, r))
 		else:
-			self.stat_info.setText("Loaded {} of {} ".format(r, t))
+			self.stat_info.setText("Showing {} ".format(r))
 
 	def manga_display(self):
 		"initiates the manga view and related things"
 
-		self._testmodel = gallery.ProperModel(self)
+		self._testmodel = gallery.GalleryBaseModel(self)
+		self._testproxy = gallery.FlatModel(self)
+		self._testproxy.setSourceModel(self._testmodel)
 		self._testview = QTreeView()
+		self._testview.setWindowTitle("Treeview")
+		self._testtable = QTableView()
+		self._testtable.setWindowTitle("Tableview")
+		self._testlist = QListView()
+		self._testlist.setWindowTitle("Listview")
 		self._testview.setModel(self._testmodel)
+		self._testtable.setModel(self._testproxy)
+		self._testlist.setModel(self._testproxy)
 		self._testview.clicked.connect(lambda idx: print(idx.data(Qt.DisplayRole)))
+		self._testtable.clicked.connect(lambda idx: print(idx.data(Qt.DisplayRole)))
+		self._testlist.clicked.connect(lambda idx: print(idx.data(Qt.DisplayRole)))
 		self._testview.show()
+		self._testtable.show()
+		self._testlist.show()
 
 		#list view
 		self.manga_list_view = gallery.MangaView(self)
@@ -476,10 +492,13 @@ class AppWindow(QMainWindow):
 	def init_spinners(self):
 		# fetching spinner
 		self.data_fetch_spinner = misc.Spinner(self, "center")
-		self.data_fetch_spinner.set_size(60)
-		
+		self.data_fetch_spinner.set_size(70)
+		self.data_fetch_spinner.set_text("Initializing...")
+
+		if self._db_scheduler.loading:
+			self.data_fetch_spinner.show()
+			self._db_scheduler.loading_finished.connect(self.data_fetch_spinner.before_hide)
 		self.manga_list_view.gallery_model.ADD_MORE.connect(self.data_fetch_spinner.show)
-		self.manga_list_view.gallery_model.db_emitter.START.connect(self.data_fetch_spinner.show)
 		self.manga_list_view.gallery_model.ADDED_ROWS.connect(self.data_fetch_spinner.before_hide)
 
 		## deleting spinner
@@ -619,12 +638,9 @@ class AppWindow(QMainWindow):
 		# debug specfic code
 		if app_constants.DEBUG:
 			def debug_func():
-				
 				self._testmodel._setup_data()
 				from modeltest import ModelTest
-				self.modeltest = ModelTest(self._testmodel, self)
-				#self._lbl.setPixmap(pic)
-				#self._lbl.show()
+				self.modeltest = ModelTest(self._testproxy, self)
 		
 			debug_btn = QToolButton()
 			debug_btn.setText("DEBUG BUTTON")
@@ -960,6 +976,9 @@ class AppWindow(QMainWindow):
 			log_i('Populating DB from directory/archive')
 
 	def scan_for_new_galleries(self):
+		if self._db_scheduler.loading:
+			self.notification_bar.add_text("Galleries are still being loaded, please wait...")
+			return
 		available_folders = app_constants.ENABLE_MONITOR and \
 									app_constants.MONITOR_PATHS and all(app_constants.MONITOR_PATHS)
 		if available_folders and not app_constants.SCANNING_FOR_GALLERIES:

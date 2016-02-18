@@ -234,7 +234,7 @@ TOOLTIP_TIMES_READ = get(True, 'Visual', 'tooltip times read', bool)
 TOOLTIP_PUB_DATE = get(False, 'Visual', 'tooltip pub date', bool)
 TOOLTIP_DATE_ADDED = get(True, 'Visual', 'tooltip date added', bool)
 
-G_DATA = []
+ROOT_LIST = None
 GALLERY_DATA = [] # contains the most up to date gallery data
 GALLERY_LISTS = set() # contains the most up to dat gallery lists
 
