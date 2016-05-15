@@ -12,8 +12,15 @@
 #along with Happypanda.  If not, see <http://www.gnu.org/licenses/>.
 #"""
 
-import sys, logging, logging.handlers, os, argparse, platform, scandir
+import sys
+import logging
+import logging.handlers
+import os
+import argparse
+import platform
+import scandir
 import traceback
+import importlib
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QFile, Qt
@@ -24,6 +31,7 @@ import app
 import app_constants
 import gallerydb
 import utils
+import hplugins
 
 #IMPORTANT STUFF
 def start(test=False):
@@ -74,8 +82,7 @@ def start(test=False):
 			with open(log_path, 'x') as f:
 				pass
 		except FileExistsError: pass
-		log_handlers.append(logging.handlers.RotatingFileHandler(
-			log_path, maxBytes=1000000*10, encoding='utf-8', backupCount=2))
+		log_handlers.append(logging.handlers.RotatingFileHandler(log_path, maxBytes=1000000 * 10, encoding='utf-8', backupCount=2))
 
 	logging.basicConfig(level=log_level,
 					format='%(asctime)-8s %(levelname)-6s %(name)-6s %(message)s',
@@ -113,6 +120,26 @@ def start(test=False):
 	application.setApplicationDisplayName('Happypanda')
 	application.setApplicationVersion('v{}'.format(app_constants.vs))
 	application.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+	log_i('Loading plugins...')
+	pluginpaths = []
+	pluginpath = app_constants.plugin_dir
+	sys.path.insert(0, pluginpath)
+	for pdir in os.listdir(pluginpath):
+		for files in os.listdir(os.path.join(pluginpath, pdir)):
+			if files.lower().endswith("hplugin.py"):
+				pluginpaths.append("{}.{}".format(pdir, os.path.splitext(files)[0]))
+
+	for plug in pluginpaths:
+		mod = importlib.import_module(plug)
+		mod = importlib.reload(mod)
+		plugclass = mod.mountpoint()
+		log_i("Loading {}".format(plugclass.__name__))
+		hplugins.HPluginMeta(plugclass.__name__, plugclass.__bases__, dict(plugclass.__dict__))
+
+	hplugins.registered._connectHooks()
+
+	sys.path.pop(0)
 
 	log_i('Starting Happypanda...'.format(app_constants.vs))
 	if args.debug:
@@ -187,7 +214,7 @@ def start(test=False):
 
 		# styling
 		d_style = app_constants.default_stylesheet_path
-		u_style =  app_constants.user_stylesheet_path
+		u_style = app_constants.user_stylesheet_path
 
 		if len(u_style) is not 0:
 			try:
@@ -229,8 +256,7 @@ def start(test=False):
 		msg_box = QMessageBox()
 		msg_box.setWindowIcon(QIcon(app_constants.APP_ICO_PATH))
 		msg_box.setText('Incompatible database!')
-		msg_box.setInformativeText("Do you want to upgrade to newest version?" +
-							 " It shouldn't take more than a second. Don't start a new instance!")
+		msg_box.setInformativeText("Do you want to upgrade to newest version?" + " It shouldn't take more than a second. Don't start a new instance!")
 		msg_box.setIcon(QMessageBox.Critical)
 		msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
 		msg_box.setDefaultButton(QMessageBox.Yes)

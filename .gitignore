@@ -237,3 +237,5 @@ FakesAssemblies/
 /res/gallery_ext_ico.ico
 /res/sample.png
 *.hpdb
+/plugins/core/test2hplugin.py
+/plugins/core/testhplugin.py

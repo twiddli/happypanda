@@ -10,6 +10,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QPalette, QPixmapCache
 
 from misc import FlowLayout, Spacer, PathLineEdit, AppDialog, Line
+import hplugins as hooks
 import misc
 import settings
 import app_constants
@@ -38,7 +39,7 @@ class SettingsDialog(QWidget):
 
 		self.parent_widget = parent
 		self.setAttribute(Qt.WA_DeleteOnClose)
-		self.resize(700, 500)
+		self.resize(800, 500)
 		self.restore_values()
 		self.initUI()
 		self.setWindowTitle('Settings')
@@ -1264,6 +1265,21 @@ class SettingsDialog(QWidget):
 		open_hp_folder.adjustSize()
 		open_hp_folder.setFixedWidth(open_hp_folder.width())
 		about_layout.addWidget(open_hp_folder)
+
+		# About / Plugins
+		def add_plugin(plugin, groupblayout):
+			plug, plug_l = groupbox(plugin.NAME, QFormLayout, about_plugins)
+			plug_l.addRow("ID:", QLabel(plugin.ID))
+			plug_l.addRow("Author:", QLabel(plugin.AUTHOR))
+			plug_l.addRow("Description:", QLabel(plugin.DESCRIPTION))
+			plug_l.addRow("Version:", QLabel("{}.{}.{}".format(plugin.VERSION[0], plugin.VERSION[1], plugin.VERSION[2])))
+			if hasattr(plugin, "WEBSITE"):
+				plug_l.addRow("Website:", QLabel(plugin.WEBSITE))
+			groupblayout.addRow(plug)
+
+		about_plugins, about_plugins_l = new_tab("Plugins", about, True)
+		for p in sorted(hooks.registered._plugins):
+			add_plugin(hooks.registered._plugins[p], about_plugins_l)
 
 		## About / DB Overview
 		#about_db_overview, about_db_overview_m_l = new_tab('DB Overview', about)

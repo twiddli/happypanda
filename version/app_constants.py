@@ -14,6 +14,7 @@
 
 import os, sys, enum
 import settings
+import hplugins
 from database import db_constants
 
 # Version number
@@ -34,19 +35,32 @@ get = settings.get
 
 posix_program_dir = os.path.dirname(os.path.realpath(__file__))
 if os.name == 'posix':
-	 static_dir = os.path.join(posix_program_dir, '../res')
-	 bin_dir = os.path.join(posix_program_dir, 'bin')
-	 temp_dir = os.path.join(posix_program_dir, 'temp')
+	static_dir = os.path.join(posix_program_dir, '../res')
+	bin_dir = os.path.join(posix_program_dir, 'bin')
+	temp_dir = os.path.join(posix_program_dir, 'temp')
+	plugin_dir = os.path.join(posix_program_dir, '../plugins')
 else:
 	bin_dir = os.path.join(os.getcwd(), 'bin')
 	static_dir = os.path.join(os.getcwd(), "res")
-	temp_dir = os.path.join('temp')
+	temp_dir = os.path.join(os.getcwd(), 'temp')
+	plugin_dir = os.path.join(os.getcwd(), 'plugins')
 # path to unrar tool binary
 unrar_tool_path = get('', 'Application', 'unrar tool path')
 
 #default stylesheet path
 default_stylesheet_path = os.path.join(static_dir,"style.css")
 user_stylesheet_path = ""
+
+# core plugin
+class CoreHPlugin:
+	ID = "9fb4ce2a-fe47-42ef-8c58-e039d999eb19"
+	NAME = "Core"
+	DESCRIPTION = "A Core plugin"
+	AUTHOR = "Pewpews"
+	WEBSITE = "https://github.com/Pewpews/happypanda"
+	VERSION = (0, 29, 0)
+
+coreplugin = hplugins.HPluginMeta(CoreHPlugin.__name__, CoreHPlugin.__bases__, dict(CoreHPlugin.__dict__))
 
 INTERNAL_LEVEL = 7
 FIRST_TIME_LEVEL = get(7, 'Application', 'first time level', int)
