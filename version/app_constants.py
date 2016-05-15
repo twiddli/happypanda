@@ -62,6 +62,9 @@ class CoreHPlugin:
 
 coreplugin = hplugins.HPluginMeta(CoreHPlugin.__name__, CoreHPlugin.__bases__, dict(CoreHPlugin.__dict__))
 
+# hooks
+coreplugin.newHook("galleryMenu") # used by gallery menu
+
 INTERNAL_LEVEL = 7
 FIRST_TIME_LEVEL = get(7, 'Application', 'first time level', int)
 UPDATE_VERSION = get('0.25', 'Application', 'version', str)

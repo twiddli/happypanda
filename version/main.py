@@ -75,7 +75,7 @@ def start(test=False):
 			pass
 
 		log_handlers.append(logging.FileHandler('happypanda_debug.log', 'w', 'utf-8'))
-		log_level = logging.DEBUG
+		#log_level = logging.DEBUG
 		app_constants.DEBUG = True
 	else:
 		try:
@@ -138,6 +138,7 @@ def start(test=False):
 		hplugins.HPluginMeta(plugclass.__name__, plugclass.__bases__, dict(plugclass.__dict__))
 
 	hplugins.registered._connectHooks()
+	#hplugins.startConnectionLoop()
 
 	sys.path.pop(0)
 

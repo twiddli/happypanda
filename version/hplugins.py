@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+import threading
 
 from PyQt5.QtCore import pyqtWrapperType
 
@@ -28,6 +29,7 @@ class Plugins:
 	def _connectHooks(self):
 		for plugin_name, pluginid, h_name, handler in self._connections:
 			log_i("{}:{} connection to {}:{}".format(plugin_name, handler, pluginid, h_name))
+			print(self.hooks)
 			try:
 				p = self.hooks[pluginid]
 			except KeyError:
@@ -40,6 +42,7 @@ class Plugins:
 				return
 		
 			h.addHandler(handler)
+		return True
 
 	def __getattr__(self, key):
 		try:
@@ -125,8 +128,10 @@ class HPluginMeta(pyqtWrapperType):
 				self._handlers.add(handler)
 
 			def __call__(self, *args, **kwargs):
+				handler_returns = []
 				for handlers in self._handlers:
-					handlers(*args, **kwargs)
+					handler_returns.append(handlers(*args, **kwargs))
+				return handler_returns
 
 		h = Hook()
 
@@ -137,3 +142,11 @@ class HPluginMeta(pyqtWrapperType):
 			return self._plugins.hooks[self.ID][key]
 		except KeyError:
 			return None
+
+#def startConnectionLoop():
+#	def autoConnectHooks():
+#		run = True
+#		while run:
+#			run = registered._connectHooks()
+#	auto_t = threading.Thread(target=autoConnectHooks)
+#	auto_t.start()

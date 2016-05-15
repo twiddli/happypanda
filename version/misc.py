@@ -11,7 +11,15 @@
 #You should have received a copy of the GNU General Public License
 #along with Happypanda.  If not, see <http://www.gnu.org/licenses/>.
 #"""
-import os, threading, queue, time, logging, math, random, functools, scandir
+import os
+import threading
+import queue
+import time
+import logging
+import math
+import random
+import functools
+import scandir
 from datetime import datetime
 
 from PyQt5.QtCore import (Qt, QDate, QPoint, pyqtSignal, QThread,
@@ -50,6 +58,7 @@ import app_constants
 import gallerydb
 import fetch
 import settings
+import hplugins as hooks
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -86,14 +95,10 @@ def centerWidget(widget, parent_widget=None):
 	else:
 		r = QDesktopWidget().availableGeometry()
 
-	widget.setGeometry(
-		QCommonStyle.alignedRect(
-			Qt.LeftToRight,
+	widget.setGeometry(QCommonStyle.alignedRect(Qt.LeftToRight,
 			Qt.AlignCenter,
 			widget.size(),
-			r
-			)
-		)
+			r))
 
 def clearLayout(layout):
 	if layout != None:
@@ -132,13 +137,13 @@ class ArrowHandle(QWidget):
 
 		# for horizontal
 		if self.current_arrow == self.IN:
-			arrow_1 = QPointF(x+w, h/2-self.arrow_height/2)
-			middle_point = QPointF(x, h/2)
-			arrow_2 = QPointF(x+w, h/2+self.arrow_height/2)
+			arrow_1 = QPointF(x + w, h / 2 - self.arrow_height / 2)
+			middle_point = QPointF(x, h / 2)
+			arrow_2 = QPointF(x + w, h / 2 + self.arrow_height / 2)
 		else:
-			arrow_1 = QPointF(x, h/2-self.arrow_height/2)
-			middle_point = QPointF(x+w, h/2)
-			arrow_2 = QPointF(x, h/2+self.arrow_height/2)
+			arrow_1 = QPointF(x, h / 2 - self.arrow_height / 2)
+			middle_point = QPointF(x + w, h / 2)
+			arrow_2 = QPointF(x, h / 2 + self.arrow_height / 2)
 
 		arrow_points.append(arrow_1)
 		arrow_points.append(middle_point)
@@ -213,7 +218,7 @@ class BaseMoveWidget(QWidget):
 			self.move(new_size)
 			return
 		if self.parent_widget:
-			self.move(self.parent_widget.window().frameGeometry().center() -\
+			self.move(self.parent_widget.window().frameGeometry().center() - \
 				self.window().rect().center())
 
 
@@ -282,7 +287,7 @@ class SortMenu(QMenu):
 class ToolbarButton(QPushButton):
 	select = pyqtSignal(object)
 	close_tab = pyqtSignal(object)
-	def __init__(self, parent = None, txt=''):
+	def __init__(self, parent=None, txt=''):
 		super().__init__(parent)
 		self._text = txt
 		self._font_metrics = self.fontMetrics()
@@ -319,17 +324,17 @@ class ToolbarButton(QPushButton):
 			painter.setBrush(QBrush(QColor(164,164,164,120)))
 		#painter.setPen(Qt.NoPen)
 		painter.setRenderHint(painter.Antialiasing)
-		ch_width = self._font_metrics.averageCharWidth()/2
+		ch_width = self._font_metrics.averageCharWidth() / 2
 		ch_height = self._font_metrics.height()
-		but_rect = QRectF(ch_width, ch_width, self.width()-ch_width*2, self.height()-ch_width*2)
+		but_rect = QRectF(ch_width, ch_width, self.width() - ch_width * 2, self.height() - ch_width * 2)
 		select_rect = QRectF(0,0, self.width(), self.height())
 
 		painter.drawRoundedRect(but_rect, ch_width,ch_width)
 		txt_to_draw = self._font_metrics.elidedText(self._text,
 											  Qt.ElideRight, but_rect.width())
 
-		but_center = (but_rect.height() - ch_height)/2
-		text_rect = QRectF(but_rect.x()+ch_width*2, but_rect.y()+but_center, but_rect.width(),
+		but_center = (but_rect.height() - ch_height) / 2
+		text_rect = QRectF(but_rect.x() + ch_width * 2, but_rect.y() + but_center, but_rect.width(),
 					 but_rect.height())
 		painter.setPen(QColor('white'))
 		painter.drawText(text_rect, txt_to_draw)
@@ -396,9 +401,9 @@ class ArrowWindow(TransparentWidget):
 
 		size = self.size()
 		if self.direction in (self.LEFT, self.RIGHT):
-			actual_size = QSizeF(size.width()-self.arrow_size.width(), size.height())
+			actual_size = QSizeF(size.width() - self.arrow_size.width(), size.height())
 		else:
-			actual_size = QSizeF(size.width(), size.height()-self.arrow_size.height())
+			actual_size = QSizeF(size.width(), size.height() - self.arrow_size.height())
 
 		starting_point = QPointF(0, 0)
 		if self.direction == self.LEFT:
@@ -413,30 +418,30 @@ class ArrowWindow(TransparentWidget):
 		# calculate the arrow
 		arrow_points = []
 		if self.direction == self.LEFT:
-			middle_point = QPointF(0, actual_size.height()/2)
-			arrow_1 = QPointF(self.arrow_size.width(), middle_point.y()-self.arrow_size.height()/2)
-			arrow_2 = QPointF(self.arrow_size.width(), middle_point.y()+self.arrow_size.height()/2)
+			middle_point = QPointF(0, actual_size.height() / 2)
+			arrow_1 = QPointF(self.arrow_size.width(), middle_point.y() - self.arrow_size.height() / 2)
+			arrow_2 = QPointF(self.arrow_size.width(), middle_point.y() + self.arrow_size.height() / 2)
 			arrow_points.append(arrow_1)
 			arrow_points.append(middle_point)
 			arrow_points.append(arrow_2)
 		elif self.direction == self.RIGHT:
-			middle_point = QPointF(actual_size.width()+self.arrow_size.width(), actual_size.height()/2)
-			arrow_1 = QPointF(actual_size.width(), middle_point.y()+self.arrow_size.height()/2)
-			arrow_2 = QPointF(actual_size.width(), middle_point.y()-self.arrow_size.height()/2)
+			middle_point = QPointF(actual_size.width() + self.arrow_size.width(), actual_size.height() / 2)
+			arrow_1 = QPointF(actual_size.width(), middle_point.y() + self.arrow_size.height() / 2)
+			arrow_2 = QPointF(actual_size.width(), middle_point.y() - self.arrow_size.height() / 2)
 			arrow_points.append(arrow_1)
 			arrow_points.append(middle_point)
 			arrow_points.append(arrow_2)
 		elif self.direction == self.TOP:
-			middle_point = QPointF(actual_size.width()/2, 0)
-			arrow_1 = QPointF(actual_size.width()/2+self.arrow_size.width()/2, self.arrow_size.height())
-			arrow_2 = QPointF(actual_size.width()/2-self.arrow_size.width()/2, self.arrow_size.height())
+			middle_point = QPointF(actual_size.width() / 2, 0)
+			arrow_1 = QPointF(actual_size.width() / 2 + self.arrow_size.width() / 2, self.arrow_size.height())
+			arrow_2 = QPointF(actual_size.width() / 2 - self.arrow_size.width() / 2, self.arrow_size.height())
 			arrow_points.append(arrow_1)
 			arrow_points.append(middle_point)
 			arrow_points.append(arrow_2)
 		elif self.direction == self.BOTTOM:
-			middle_point = QPointF(actual_size.width()/2, actual_size.height()+self.arrow_size.height())
-			arrow_1 = QPointF(actual_size.width()/2-self.arrow_size.width()/2, actual_size.height())
-			arrow_2 = QPointF(actual_size.width()/2+self.arrow_size.width()/2, actual_size.height())
+			middle_point = QPointF(actual_size.width() / 2, actual_size.height() + self.arrow_size.height())
+			arrow_1 = QPointF(actual_size.width() / 2 - self.arrow_size.width() / 2, actual_size.height())
+			arrow_2 = QPointF(actual_size.width() / 2 + self.arrow_size.width() / 2, actual_size.height())
 			arrow_points.append(arrow_1)
 			arrow_points.append(middle_point)
 			arrow_points.append(arrow_2)
@@ -523,43 +528,43 @@ class GalleryMetaWindow(ArrowWindow):
 		# adjust placement
 
 		def check_left():
-			middle = (index_top_left.y() + index_btm_left.y())/2 # middle of gallery left side
+			middle = (index_top_left.y() + index_btm_left.y()) / 2 # middle of gallery left side
 			left = (index_top_left.x() - self.width() - margin_offset) > 0 # if the width can be there
-			top = (middle - (self.height()/2) - margin_offset) > 0 # if the top half of window can be there
-			btm = (middle + (self.height()/2) + margin_offset) < desktop_h # same as above, just for the bottom
+			top = (middle - (self.height() / 2) - margin_offset) > 0 # if the top half of window can be there
+			btm = (middle + (self.height() / 2) + margin_offset) < desktop_h # same as above, just for the bottom
 			if left and top and btm:
 				self.direction = self.RIGHT
 				x = index_top_left.x() - gallery_touch_offset - self.width()
-				y = middle - (self.height()/2)
+				y = middle - (self.height() / 2)
 				appear_point = QPoint(int(x), int(y))
 				self.move(appear_point)
 				return True
 			return False
 
 		def check_right():
-			middle = (index_top_right.y() + index_btm_right.y())/2 # middle of gallery right side
+			middle = (index_top_right.y() + index_btm_right.y()) / 2 # middle of gallery right side
 			right = (index_top_right.x() + self.width() + margin_offset) < desktop_w # if the width can be there
-			top = (middle - (self.height()/2) - margin_offset) > 0 # if the top half of window can be there
-			btm = (middle + (self.height()/2) + margin_offset) < desktop_h # same as above, just for the bottom
+			top = (middle - (self.height() / 2) - margin_offset) > 0 # if the top half of window can be there
+			btm = (middle + (self.height() / 2) + margin_offset) < desktop_h # same as above, just for the bottom
 
 			if right and top and btm:
 				self.direction = self.LEFT
 				x = index_top_right.x() + gallery_touch_offset
-				y = middle - (self.height()/2)
+				y = middle - (self.height() / 2)
 				appear_point = QPoint(int(x), int(y))
 				self.move(appear_point)
 				return True
 			return False
 
 		def check_top():
-			middle = (index_top_left.x() + index_top_right.x())/2 # middle of gallery top side
+			middle = (index_top_left.x() + index_top_right.x()) / 2 # middle of gallery top side
 			top = (index_top_right.y() - self.height() - margin_offset) > 0 # if the height can be there
-			left = (middle - (self.width()/2) - margin_offset) > 0 # if the left half of window can be there
-			right = (middle + (self.width()/2) + margin_offset) < desktop_w # same as above, just for the right
+			left = (middle - (self.width() / 2) - margin_offset) > 0 # if the left half of window can be there
+			right = (middle + (self.width() / 2) + margin_offset) < desktop_w # same as above, just for the right
 
 			if top and left and right:
 				self.direction = self.BOTTOM
-				x = middle - (self.width()/2)
+				x = middle - (self.width() / 2)
 				y = index_top_left.y() - gallery_touch_offset - self.height()
 				appear_point = QPoint(int(x), int(y))
 				self.move(appear_point)
@@ -567,14 +572,14 @@ class GalleryMetaWindow(ArrowWindow):
 			return False
 
 		def check_bottom(override=False):
-			middle = (index_btm_left.x() + index_btm_right.x())/2 # middle of gallery bottom side
+			middle = (index_btm_left.x() + index_btm_right.x()) / 2 # middle of gallery bottom side
 			btm = (index_btm_right.y() + self.height() + margin_offset) < desktop_h # if the height can be there
-			left = (middle - (self.width()/2) - margin_offset) > 0 # if the left half of window can be there
-			right = (middle + (self.width()/2) + margin_offset) < desktop_w # same as above, just for the right
+			left = (middle - (self.width() / 2) - margin_offset) > 0 # if the left half of window can be there
+			right = (middle + (self.width() / 2) + margin_offset) < desktop_w # same as above, just for the right
 
 			if (btm and left and right) or override:
 				self.direction = self.TOP
-				x = middle - (self.width()/2)
+				x = middle - (self.width() / 2)
 				y = index_btm_left.y() + gallery_touch_offset
 				appear_point = QPoint(int(x), int(y))
 				self.move(appear_point)
@@ -587,7 +592,7 @@ class GalleryMetaWindow(ArrowWindow):
 		else: # default pos is bottom
 			check_bottom(True)
 
-		self._set_gallery(index.data(Qt.UserRole+1))
+		self._set_gallery(index.data(Qt.UserRole + 1))
 		self.show()
 
 	def closeEvent(self, ev):
@@ -597,16 +602,17 @@ class GalleryMetaWindow(ArrowWindow):
 	def _set_gallery(self, gallery):
 		self.current_gallery = gallery
 		self.g_widget.apply_gallery(gallery)
-		self.g_widget.resize(self.width()-self.content_margin,
-									 self.height()-self.content_margin)
+		self.g_widget.resize(self.width() - self.content_margin,
+									 self.height() - self.content_margin)
 		if self.direction == self.LEFT:
 			start_point = QPoint(self.arrow_size.width(), 0)
 		elif self.direction == self.TOP:
 			start_point = QPoint(0, self.arrow_size.height())
 		else:
 			start_point = QPoint(0, 0)
-		# title 
-		#title_region = QRegion(0, 0, self.g_title_lbl.width(), self.g_title_lbl.height())
+		# title
+		#title_region = QRegion(0, 0, self.g_title_lbl.width(),
+		#self.g_title_lbl.height())
 		self.g_widget.move(start_point)
 
 	class GalleryLayout(QFrame):
@@ -643,12 +649,12 @@ class GalleryMetaWindow(ArrowWindow):
 					return t
 
 				for chap in chapter_container:
-					c_row = self.rowCount()+1
+					c_row = self.rowCount() + 1
 					self.setRowCount(c_row)
 					c_row -= 1
 					n = t_item()
-					n.setData(Qt.DisplayRole, chap.number+1)
-					n.setData(Qt.UserRole+1, chap)
+					n.setData(Qt.DisplayRole, chap.number + 1)
+					n.setData(Qt.UserRole + 1, chap)
 					self.setItem(c_row, 0, n)
 					title = chap.title
 					if not title:
@@ -662,7 +668,7 @@ class GalleryMetaWindow(ArrowWindow):
 			def _get_chap(self, idx):
 				r = idx.row()
 				t = self.item(r, 0)
-				return t.data(Qt.UserRole+1)
+				return t.data(Qt.UserRole + 1)
 
 			def contextMenuEvent(self, event):
 				idx = self.indexAt(event.pos())
@@ -844,7 +850,7 @@ class Spinner(TransparentWidget):
 
 	def __init__(self, parent, position='topright'):
 		"Position can be: 'center', 'topright' or QPoint"
-		super().__init__(parent, flags=Qt.Window|Qt.FramelessWindowHint, move_listener=False)
+		super().__init__(parent, flags=Qt.Window | Qt.FramelessWindowHint, move_listener=False)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
 		self.fps = 21
 		self.border = 2
@@ -859,7 +865,7 @@ class Spinner(TransparentWidget):
 		self._timer = QTimer(self)
 		self._timer.timeout.connect(self._on_timer_timeout)
 
-		# keep track of the current start angle to avoid 
+		# keep track of the current start angle to avoid
 		# unnecessary repaints
 		self._start_angle = 0
 
@@ -884,8 +890,8 @@ class Spinner(TransparentWidget):
 		self._set_position(position)
 
 	def _update_layout(self):
-		self.text_layout = text_layout(self.text, self.width()-self._text_margin, self.font(), self.fontMetrics())
-		self.setFixedHeight(self._min_size+self.text_layout.boundingRect().height())
+		self.text_layout = text_layout(self.text, self.width() - self._text_margin, self.font(), self.fontMetrics())
+		self.setFixedHeight(self._min_size + self.text_layout.boundingRect().height())
 
 	def set_size(self, w):
 		self.setFixedWidth(w)
@@ -940,17 +946,17 @@ class Spinner(TransparentWidget):
 			painter.setPen(pen)
 
 			border = self.border + int(math.ceil(self.line_width / 2.0))
-			r = QRectF((txt_rect.height())/2, (txt_rect.height()/2),
-			  self.width()-txt_rect.height(), self.width()-txt_rect.height())
+			r = QRectF((txt_rect.height()) / 2, (txt_rect.height() / 2),
+			  self.width() - txt_rect.height(), self.width() - txt_rect.height())
 			r.adjust(border, border, -border, -border)
 
-			# draw the arc:    
+			# draw the arc:
 			painter.drawArc(r, -self._start_angle * 16, self.arc_length * 16)
 
 			# draw text if there is
 			if self.text:
 				txt_rect = self.text_layout.boundingRect()
-				self.text_layout.draw(painter, QPointF(self._text_margin, self.height()-txt_rect.height()-self._text_margin/2))
+				self.text_layout.draw(painter, QPointF(self._text_margin, self.height() - txt_rect.height() - self._text_margin / 2))
 
 			r = None
 
@@ -990,12 +996,12 @@ class Spinner(TransparentWidget):
 		if not self.isVisible():
 			return
 
-		# calculate the spin angle as a function of the current time so that all 
+		# calculate the spin angle as a function of the current time so that all
 		# spinners appear in sync!
 		t = time.time()
 		whole_seconds = int(t)
 		p = (whole_seconds % self.seconds_per_spin) + (t - whole_seconds)
-		angle = int((360 * p)/self.seconds_per_spin)
+		angle = int((360 * p) / self.seconds_per_spin)
 
 		if angle == self._start_angle:
 			return
@@ -1013,7 +1019,7 @@ class GalleryMenu(QMenu):
 		self.view = view
 		self.sort_model = sort_model
 		self.index = index
-		self.gallery = index.data(Qt.UserRole+1)
+		self.gallery = index.data(Qt.UserRole + 1)
 		self.selected = selected_indexes
 		if self.view.view_type == app_constants.ViewType.Default:
 			if not self.selected:
@@ -1030,7 +1036,7 @@ class GalleryMenu(QMenu):
 				favourite_act.setCheckable(True)
 				f = []
 				for idx in self.selected:
-					if idx.data(Qt.UserRole+1).fav:
+					if idx.data(Qt.UserRole + 1).fav:
 						f.append(True)
 					else:
 						f.append(False)
@@ -1046,6 +1052,15 @@ class GalleryMenu(QMenu):
 			add_to_ignore = self.addAction('Ignore and remove',
 								  self.add_to_ignore)
 		self.addSeparator()
+
+		# plugin menus
+		plug_menus = hooks.registered.Core.galleryMenu()
+		if plug_menus:
+			for txt, handler in plug_menus:
+				if callable(handler):
+					self.addAction(txt, handler)
+			self.addSeparator()
+
 		if not self.selected and isinstance(view, QTableView):
 			chapters_menu = self.addAction('Chapters')
 			open_chapters = QMenu(self)
@@ -1071,28 +1086,28 @@ class GalleryMenu(QMenu):
 		self.addSeparator()
 		if not self.selected:
 			get_metadata = self.addAction('Get metadata',
-									lambda: self.parent_widget.get_metadata(index.data(Qt.UserRole+1)))
+									lambda: self.parent_widget.get_metadata(index.data(Qt.UserRole + 1)))
 		else:
 			gals = []
 			for idx in self.selected:
-				gals.append(idx.data(Qt.UserRole+1))
+				gals.append(idx.data(Qt.UserRole + 1))
 			get_select_metadata = self.addAction('Get metadata for selected',
 										lambda: self.parent_widget.get_metadata(gals))
 		self.addSeparator()
 		edit = self.addAction('Edit', lambda: self.edit_gallery.emit(self.parent_widget,
-											self.index.data(Qt.UserRole+1) if not self.selected else [idx.data(Qt.UserRole+1) for idx in self.selected]))
+											self.index.data(Qt.UserRole + 1) if not self.selected else [idx.data(Qt.UserRole + 1) for idx in self.selected]))
 		if not self.selected:
-			text = 'folder' if not self.index.data(Qt.UserRole+1).is_archive else 'archive'
+			text = 'folder' if not self.index.data(Qt.UserRole + 1).is_archive else 'archive'
 			op_folder_act = self.addAction('Open {}'.format(text), self.op_folder)
 			op_cont_folder_act = self.addAction('Show in folder', lambda: self.op_folder(containing=True))
 		else:
-			text = 'folders' if not self.index.data(Qt.UserRole+1).is_archive else 'archives'
+			text = 'folders' if not self.index.data(Qt.UserRole + 1).is_archive else 'archives'
 			op_folder_select = self.addAction('Open {}'.format(text), lambda: self.op_folder(True))
 			op_cont_folder_select = self.addAction('Show in folders', lambda: self.op_folder(True, True))
 
-		if self.index.data(Qt.UserRole+1).link and not self.selected:
+		if self.index.data(Qt.UserRole + 1).link and not self.selected:
 			op_link = self.addAction('Open URL', self.op_link)
-		if self.selected and all([idx.data(Qt.UserRole+1).link for idx in self.selected]):
+		if self.selected and all([idx.data(Qt.UserRole + 1).link for idx in self.selected]):
 			op_links = self.addAction('Open URLs', lambda: self.op_link(True))
 
 		remove_act = self.addAction('Remove')
@@ -1108,12 +1123,10 @@ class GalleryMenu(QMenu):
 			remove_ch = remove_menu.addAction('Remove chapter')
 			remove_ch_menu = QMenu(self)
 			remove_ch.setMenu(remove_ch_menu)
-			for number, chap_number in enumerate(range(len(
-				self.index.data(Qt.UserRole+1).chapters)), 1):
+			for number, chap_number in enumerate(range(len(self.index.data(Qt.UserRole + 1).chapters)), 1):
 				chap_action = QAction("Remove chapter {}".format(number),
 						  remove_ch_menu,
-						  triggered = functools.partial(
-							  self.parent_widget.manga_list_view.del_chapter,
+						  triggered = functools.partial(self.parent_widget.manga_list_view.del_chapter,
 							  index,
 							  chap_number))
 				remove_ch_menu.addAction(chap_action)
@@ -1136,9 +1149,9 @@ class GalleryMenu(QMenu):
 		if self.selected:
 			allow_metadata_count = 0
 			for i in self.selected:
-				if i.data(Qt.UserRole+1).exed:
+				if i.data(Qt.UserRole + 1).exed:
 					allow_metadata_count += 1
-			self.allow_metadata_exed = allow_metadata_count >= len(self.selected)//2
+			self.allow_metadata_exed = allow_metadata_count >= len(self.selected) // 2
 		else:
 			self.allow_metadata_exed = False if not self.gallery.exed else True
 
@@ -1153,7 +1166,7 @@ class GalleryMenu(QMenu):
 			gs = self.selected
 		else:
 			gs = [self.index]
-		galleries = [idx.data(Qt.UserRole+1) for idx in gs]
+		galleries = [idx.data(Qt.UserRole + 1) for idx in gs]
 
 		paths = set()
 		for g in galleries:
@@ -1172,10 +1185,10 @@ class GalleryMenu(QMenu):
 			gs = self.selected
 		else:
 			gs = [self.index]
-		galleries = [idx.data(Qt.UserRole+1) for idx in gs]
+		galleries = [idx.data(Qt.UserRole + 1) for idx in gs]
 		rows = len(galleries)
 		self.view.gallery_model._gallery_to_remove.extend(galleries)
-		self.view.gallery_model.removeRows(self.view.gallery_model.rowCount()-rows, rows)
+		self.view.gallery_model.removeRows(self.view.gallery_model.rowCount() - rows, rows)
 		self.parent_widget.default_manga_view.add_gallery(galleries)
 		for g in galleries:
 			gallerydb.execute(gallerydb.GalleryDB.modify_gallery,
@@ -1185,7 +1198,7 @@ class GalleryMenu(QMenu):
 		exed = 0 if self.allow_metadata_exed else 1
 		if self.selected:
 			for idx in self.selected:
-				g = idx.data(Qt.UserRole+1)
+				g = idx.data(Qt.UserRole + 1)
 				g.exed = exed
 				gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, g.id, {'exed':exed})
 		else:
@@ -1196,7 +1209,7 @@ class GalleryMenu(QMenu):
 		galleries = []
 		if self.selected:
 			for idx in self.selected:
-				galleries.append(idx.data(Qt.UserRole+1))
+				galleries.append(idx.data(Qt.UserRole + 1))
 		else:
 			galleries.append(self.gallery)
 		g_list.add_gallery(galleries)
@@ -1206,7 +1219,7 @@ class GalleryMenu(QMenu):
 		if self.selected:
 			g_ids = []
 			for idx in self.selected:
-				g_ids.append(idx.data(Qt.UserRole+1).id)
+				g_ids.append(idx.data(Qt.UserRole + 1).id)
 		else:
 			g_ids = self.gallery.id
 		self.sort_model.current_gallery_list.remove_gallery(g_ids)
@@ -1217,7 +1230,7 @@ class GalleryMenu(QMenu):
 			self.parent_widget.manga_list_view.favorite(idx)
 
 	def change_cover(self):
-		gallery = self.index.data(Qt.UserRole+1)
+		gallery = self.index.data(Qt.UserRole + 1)
 		log_i('Attempting to change cover of {}'.format(gallery.title.encode(errors='ignore')))
 		if gallery.is_archive:
 			try:
@@ -1243,34 +1256,34 @@ class GalleryMenu(QMenu):
 		txt = "Opening first chapters of selected galleries"
 		app_constants.STAT_MSG_METHOD(txt)
 		for idx in self.selected:
-			idx.data(Qt.UserRole+1).chapters[0].open(False)
+			idx.data(Qt.UserRole + 1).chapters[0].open(False)
 
 	def op_link(self, select=False):
 		if select:
 			for x in self.selected:
-				gal = x.data(Qt.UserRole+1)
+				gal = x.data(Qt.UserRole + 1)
 				utils.open_web_link(gal.link)
 		else:
-			utils.open_web_link(self.index.data(Qt.UserRole+1).link)
+			utils.open_web_link(self.index.data(Qt.UserRole + 1).link)
 			
 
 	def op_folder(self, select=False, containing=False):
 		if select:
 			for x in self.selected:
-				text = 'Opening archives...' if self.index.data(Qt.UserRole+1).is_archive else 'Opening folders...'
+				text = 'Opening archives...' if self.index.data(Qt.UserRole + 1).is_archive else 'Opening folders...'
 				text = 'Opening containing folders...' if containing else text
 				self.view.STATUS_BAR_MSG.emit(text)
-				gal = x.data(Qt.UserRole+1)
+				gal = x.data(Qt.UserRole + 1)
 				path = os.path.split(gal.path)[0] if containing else gal.path
 				if containing:
 					utils.open_path(path, gal.path)
 				else:
 					utils.open_path(path)
 		else:
-			text = 'Opening archive...' if self.index.data(Qt.UserRole+1).is_archive else 'Opening folder...'
+			text = 'Opening archive...' if self.index.data(Qt.UserRole + 1).is_archive else 'Opening folder...'
 			text = 'Opening containing folder...' if containing else text
 			self.view.STATUS_BAR_MSG.emit(text)
-			gal = self.index.data(Qt.UserRole+1)
+			gal = self.index.data(Qt.UserRole + 1)
 			path = os.path.split(gal.path)[0] if containing else gal.path
 			if containing:
 				utils.open_path(path, gal.path)
@@ -1280,10 +1293,10 @@ class GalleryMenu(QMenu):
 
 	def add_chapters(self):
 		def add_chdb(chaps_container):
-			gallery = self.index.data(Qt.UserRole+1)
+			gallery = self.index.data(Qt.UserRole + 1)
 			log_i('Adding new chapter for {}'.format(gallery.title.encode(errors='ignore')))
 			gallerydb.execute(gallerydb.ChapterDB.add_chapters_raw, False, gallery.id, chaps_container)
-		ch_widget = ChapterAddWidget(self.index.data(Qt.UserRole+1), self.parent_widget)
+		ch_widget = ChapterAddWidget(self.index.data(Qt.UserRole + 1), self.parent_widget)
 		ch_widget.CHAPTERS.connect(add_chdb)
 		ch_widget.show()
 
@@ -1391,7 +1404,7 @@ class BasePopup(TransparentWidget):
 	def mouseMoveEvent(self, event):
 		if event.buttons() == Qt.LeftButton:
 			diff = event.pos() - self.curr_pos
-			newpos = self.pos()+diff
+			newpos = self.pos() + diff
 			self.move(newpos)
 		return super().mouseMoveEvent(event)
 
@@ -1449,7 +1462,7 @@ class AppBubble(BasePopup):
 			self.hide_timer.stop()
 		self.title.setText('<h3>{}</h3>'.format(title))
 		self.content.setText(txt)
-		self.hide_timer.start(duration*1000)
+		self.hide_timer.start(duration * 1000)
 		self.show()
 		self.adjustSize()
 		self.update_move()
@@ -1457,7 +1470,7 @@ class AppBubble(BasePopup):
 	def update_move(self):
 		if self.parent_widget:
 			tl = self.parent_widget.geometry().topLeft()
-			x =  tl.x() + self.parent_widget.width() - self.width() - 10
+			x = tl.x() + self.parent_widget.width() - self.width() - 10
 			y = tl.y() + self.parent_widget.height() - self.height() - self.parent_widget.statusBar().height()
 			self.move(x, y)
 
@@ -1508,8 +1521,7 @@ class AppDialog(BasePopup):
 			main_layout.addWidget(self.note_info)
 			main_layout.addWidget(self.restart_info)
 		elif mode == self.MESSAGE:
-			self.info_lbl.setText("<font color='red'>An exception has ben encountered.\nContact the developer to get this fixed."+
-						 "\nStability from this point onward cannot be guaranteed.</font>")
+			self.info_lbl.setText("<font color='red'>An exception has ben encountered.\nContact the developer to get this fixed." + "\nStability from this point onward cannot be guaranteed.</font>")
 			self.setWindowTitle("It was too big!")
 
 		self.main_widget.setLayout(main_layout)
@@ -1680,14 +1692,14 @@ class GalleryShowcaseWidget(QWidget):
 		artist = self.font_M.elidedText(gallery.artist, Qt.ElideRight, self.w)
 		self.text.setText("{}\n{}".format(title, artist))
 		self.setToolTip("{}\n{}".format(gallery.title, gallery.artist))
-		self.resize(self.w, self.h+50)
+		self.resize(self.w, self.h + 50)
 
 	def paintEvent(self, event):
 		painter = QPainter(self)
 		if self.underMouse():
 			painter.setBrush(QBrush(QColor(164,164,164,120)))
-			painter.drawRect(self.text.pos().x()-2, self.profile.pos().y()-5,
-					self.text.width()+2, self.profile.height()+self.text.height()+12)
+			painter.drawRect(self.text.pos().x() - 2, self.profile.pos().y() - 5,
+					self.text.width() + 2, self.profile.height() + self.text.height() + 12)
 		super().paintEvent(event)
 
 	def enterEvent(self, event):
@@ -1716,12 +1728,12 @@ class SingleGalleryChoices(BasePopup):
 	if text is passed, the text will be shown alongside gallery, else gallery be centered
 	"""
 	USER_CHOICE = pyqtSignal(object)
-	def __init__(self, gallery, tuple_first_idx, text=None, parent = None):
+	def __init__(self, gallery, tuple_first_idx, text=None, parent=None):
 		super().__init__(parent, flags= Qt.Dialog | Qt.FramelessWindowHint)
 		main_layout = QVBoxLayout()
 		self.main_widget.setLayout(main_layout)
 		g_showcase = GalleryShowcaseWidget()
-		g_showcase.set_gallery(gallery, (170//1.40, 170))
+		g_showcase.set_gallery(gallery, (170 // 1.40, 170))
 		if text:
 			t_layout = QHBoxLayout()
 			main_layout.addLayout(t_layout)
@@ -1809,8 +1821,7 @@ class TorrentUserChoice(BaseUserChoice):
 
 	def add_torrent_item(self, item):
 		list_item = CustomListItem(item)
-		list_item.setText("{}\nSeeds:{}\tPeers:{}\tSize:{}\tDate:{}\tUploader:{}".format(
-			item.name, item.seeds, item.peers, item.size, item.date, item.uploader))
+		list_item.setText("{}\nSeeds:{}\tPeers:{}\tSize:{}\tDate:{}\tUploader:{}".format(item.name, item.seeds, item.peers, item.size, item.date, item.uploader))
 		self._list_w.addItem(list_item)
 
 	def accept(self):
@@ -1835,15 +1846,12 @@ class LoadingOverlay(QWidget):
 				   QBrush(QColor(255,255,255,127)))
 		painter.setPen(QPen(Qt.NoPen))
 		for i in range(6):
-			if (self.counter/5) % 6 == i:
-				painter.setBrush(QBrush(QColor(127+
-								   (self.counter%5)*32,127,127)))
+			if (self.counter / 5) % 6 == i:
+				painter.setBrush(QBrush(QColor(127 + (self.counter % 5) * 32,127,127)))
 			else:
 				painter.setBrush(QBrush(QColor(127,127,127)))
-				painter.drawEllipse(self.width()/2+30*
-						math.cos(2*math.pi*i/6.0) - 10,
-						self.height()/2+30*
-						math.sin(2*math.pi*i/6.0) - 10,
+				painter.drawEllipse(self.width() / 2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
+						self.height() / 2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10,
 						20,20)
 
 		painter.end()
@@ -1885,7 +1893,7 @@ class FileIcon:
 			if os.path.exists(app_constants.GALLERY_EXT_ICO_PATH):
 				os.remove(app_constants.GALLERY_EXT_ICO_PATH)
 			info = QFileInfo(app_constants.EXTERNAL_VIEWER_PATH)
-			icon =  QFileIconProvider().icon(info)
+			icon = QFileIconProvider().icon(info)
 			pixmap = icon.pixmap(QSize(32, 32))
 			pixmap.save(app_constants.GALLERY_EXT_ICO_PATH, quality=100)
 			app_constants._REFRESH_EXTERNAL_VIEWER = False
@@ -1910,21 +1918,20 @@ class FileIcon:
 					return False
 				for name in zip.namelist():
 					if name.lower().endswith(tuple(IMG_FILES)):
-						folder = os.path.join(
-							app_constants.temp_dir,
+						folder = os.path.join(app_constants.temp_dir,
 							'{}{}'.format(name, n))
 						zip.extract(name, folder)
-						file = os.path.join(
-							folder, name)
-						break;
+						file = os.path.join(folder, name)
+						break
 			else:
 				for p in scandir.scandir(gallery.chapters[0].path):
 					if p.name.lower().endswith(tuple(IMG_FILES)):
 						file = p.path
-						break;
+						break
 			return file
 
-		# TODO: fix this! (When there are no ids below 300? (because they go deleted))
+		# TODO: fix this!  (When there are no ids below 300?  (because they go
+		# deleted))
 		for x in range(1, 300):
 			try:
 				file = get_file(x)
@@ -1972,7 +1979,6 @@ class FileIcon:
 #		centerparent.setY(sg_rect.bottom() - child_frame.height())
 
 #	child.move(centerparent)
-
 class Spacer(QWidget):
 	"""
 	To be used as a spacer.
@@ -2171,9 +2177,7 @@ class ChapterAddWidget(QWidget):
 		self.setMaximumHeight(550)
 		self.setFixedWidth(500)
 		if parent:
-			self.move(parent.window().frameGeometry().topLeft() +
-				parent.window().rect().center() -
-				self.rect().center())
+			self.move(parent.window().frameGeometry().topLeft() + parent.window().rect().center() - self.rect().center())
 		else:
 			frect = self.frameGeometry()
 			frect.moveCenter(QDesktopWidget().availableGeometry().center())
@@ -2183,23 +2187,21 @@ class ChapterAddWidget(QWidget):
 	def add_new_chapter(self, mode):
 		chap_layout = QHBoxLayout()
 		self.added_chaps += 1
-		curr_chap = self.current_chapters+self.added_chaps
+		curr_chap = self.current_chapters + self.added_chaps
 
 		chp_numb = QSpinBox(self)
-		chp_numb.setMinimum(curr_chap-1)
-		chp_numb.setMaximum(curr_chap+1)
+		chp_numb.setMinimum(curr_chap - 1)
+		chp_numb.setMaximum(curr_chap + 1)
 		chp_numb.setValue(curr_chap)
 		curr_chap_lbl = QLabel('Chapter {}'.format(curr_chap))
 		def ch_lbl(n): curr_chap_lbl.setText('Chapter {}'.format(n))
 		chp_numb.valueChanged[int].connect(ch_lbl)
-		if mode =='f':
+		if mode == 'f':
 			chp_path = PathLineEdit()
-			chp_path.setPlaceholderText('Right/Left-click to open folder explorer.'+
-									' Leave empty to not add.')
+			chp_path.setPlaceholderText('Right/Left-click to open folder explorer.' + ' Leave empty to not add.')
 		elif mode == 'a':
 			chp_path = PathLineEdit(dir=False)
-			chp_path.setPlaceholderText('Right/Left-click to open folder explorer.'+
-									' Leave empty to not add.')
+			chp_path.setPlaceholderText('Right/Left-click to open folder explorer.' + ' Leave empty to not add.')
 
 		chp_path.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 		if mode == 'f':
@@ -2270,8 +2272,7 @@ class GalleryListView(QWidget):
 			modal_layout = QHBoxLayout()
 			frame.setLayout(modal_layout)
 			layout.addWidget(frame)
-			info = QLabel('This mode let\'s you add galleries from ' +
-				 'different folders.')
+			info = QLabel('This mode let\'s you add galleries from ' + 'different folders.')
 			f_folder = QPushButton('Add directories')
 			f_folder.clicked.connect(self.from_folder)
 			f_files = QPushButton('Add archives')
@@ -2283,12 +2284,10 @@ class GalleryListView(QWidget):
 		check_layout = QHBoxLayout()
 		layout.addLayout(check_layout)
 		if modal:
-			check_layout.addWidget(QLabel('Please uncheck galleries you do' +
-							  ' not want to add. (Exisiting galleries won\'t be added'),
+			check_layout.addWidget(QLabel('Please uncheck galleries you do' + ' not want to add. (Exisiting galleries won\'t be added'),
 							 3)
 		else:
-			check_layout.addWidget(QLabel('Please uncheck galleries you do' +
-							  ' not want to add. (Existing galleries are hidden)'),
+			check_layout.addWidget(QLabel('Please uncheck galleries you do' + ' not want to add. (Existing galleries are hidden)'),
 							 3)
 		self.check_all = QCheckBox('Check/Uncheck All', self)
 		self.check_all.setChecked(True)
@@ -2505,8 +2504,7 @@ class CompleterTextEdit(QTextEdit):
 
 		if completionPrefix != self._completer.completionPrefix():
 			self._completer.setCompletionPrefix(completionPrefix)
-			self._completer.popup().setCurrentIndex(
-					self._completer.completionModel().index(0, 0))
+			self._completer.popup().setCurrentIndex(self._completer.completionModel().index(0, 0))
 
 		cr = self.cursorRect()
 		cr.setWidth(self._completer.popup().sizeHintForColumn(0) + self._completer.popup().verticalScrollBar().sizeHint().width())
@@ -2538,7 +2536,7 @@ class ChapterListItem(QFrame):
 		super().__init__(parent)
 		main_layout = QHBoxLayout(self)
 		chapter_layout = QFormLayout()
-		self.number_lbl = QLabel(str(chapter.number+1), self)
+		self.number_lbl = QLabel(str(chapter.number + 1), self)
 		self.number_lbl.adjustSize()
 		self.number_lbl.setFixedSize(self.number_lbl.size())
 		self.chapter_lbl = ElidedLabel(self)
@@ -2550,7 +2548,7 @@ class ChapterListItem(QFrame):
 			g_title = chapter.gallery.title
 		self.gallery_lbl = ElidedLabel(g_title, self)
 		g_lbl_font = QFont(self.gallery_lbl.font())
-		g_lbl_font.setPixelSize(g_lbl_font.pixelSize()-2)
+		g_lbl_font.setPixelSize(g_lbl_font.pixelSize() - 2)
 		g_lbl_font.setItalic(True)
 		self.gallery_lbl.setFont(g_lbl_font)
 		chapter_layout.addRow(self.gallery_lbl)
@@ -2574,4 +2572,4 @@ class ChapterListItem(QFrame):
 		if chapter.title:
 			self.chapter_lbl.setText(chapter.title)
 		else:
-			self.chapter_lbl.setText("Chapter "+str(chapter.number+1))
+			self.chapter_lbl.setText("Chapter " + str(chapter.number + 1))
