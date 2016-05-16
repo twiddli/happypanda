@@ -39,6 +39,7 @@ from PyQt5.QtWidgets import (QMainWindow, QListView,
 
 from executors import Executors
 
+import hplugins as hooks
 import app_constants
 import misc
 import gallery
@@ -622,8 +623,7 @@ class AppWindow(QMainWindow):
 		# debug specfic code
 		if app_constants.DEBUG:
 			def debug_func():
-				print(self.current_manga_view.gallery_model.rowCount())
-				print(self.current_manga_view.sort_model.rowCount())
+				hooks.registered.Test2P.compute()
 		
 			debug_btn = QToolButton()
 			debug_btn.setText("DEBUG BUTTON")

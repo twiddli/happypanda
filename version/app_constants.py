@@ -58,12 +58,12 @@ class CoreHPlugin:
 	DESCRIPTION = "A Core plugin"
 	AUTHOR = "Pewpews"
 	WEBSITE = "https://github.com/Pewpews/happypanda"
-	VERSION = (0, 29, 0)
+	VERSION = (0, 2, 0)
 
 coreplugin = hplugins.HPluginMeta(CoreHPlugin.__name__, CoreHPlugin.__bases__, dict(CoreHPlugin.__dict__))
 
 # hooks
-coreplugin.newHook("galleryMenu") # used by gallery menu
+coreplugin.createHook("galleryMenu") # used by gallery menu
 
 INTERNAL_LEVEL = 7
 FIRST_TIME_LEVEL = get(7, 'Application', 'first time level', int)

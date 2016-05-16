@@ -1,5 +1,3 @@
-"""
-"""
 import logging
 import os
 import uuid
@@ -14,17 +12,31 @@ log_w = log.warning
 log_e = log.error
 log_c = log.critical
 
+class PluginError(ValueError):
+	pass
+
+class PluginIDError(PluginError):
+	pass
+
+class PluginNameError(PluginIDError):
+	pass
+
+class PluginMethodError(PluginError):
+	pass
+
 class Plugins:
 	""
 	_connections = []
 	_plugins = {}
+	_pluginsbyids = {}
 	hooks = {}
 
 
 	def register(self, plugin):
 		assert isinstance(plugin, HPluginMeta)
 		self.hooks[plugin.ID] = {}
-		self._plugins[plugin.NAME] = plugin()
+		self._plugins[plugin.NAME] = plugin() # TODO: name conflicts?
+		self._pluginsbyids[plugin.ID] = self._plugins[plugin.NAME]
 
 	def _connectHooks(self):
 		for plugin_name, pluginid, h_name, handler in self._connections:
@@ -48,20 +60,13 @@ class Plugins:
 		try:
 			return self._plugins[key]
 		except KeyError:
-			return None
+			raise PluginNameError(key)
 
 registered = Plugins()
 
-
 class HPluginMeta(pyqtWrapperType):
 
-	_plugins = registered
-
 	def __init__(cls, name, bases, dct):
-		if not isinstance(cls._plugins, Plugins):
-			log_e("Plugins should not have an attribute named _plugins")
-			return
-
 		if not name.endswith("HPlugin"):
 			log_e("Main plugin class should end with name HPlugin")
 			return
@@ -108,19 +113,64 @@ class HPluginMeta(pyqtWrapperType):
 
 		super().__init__(name, bases, dct)
 
-		setattr(cls, "newHook", cls.newHook)
-		setattr(cls, "registerHook", cls.registerHook)
+		setattr(cls, "connectPlugin", cls.connectPlugin)
+		setattr(cls, "newHook", cls.createHook)
+		setattr(cls, "registerHook", cls.connectHook)
 		setattr(cls, "__getattr__", cls.__getattr__)
 
-		cls._plugins.register(cls)
+		registered.register(cls)
 
-	def registerHook(self, pluginid, hookName, handler):
-		""
-		assert isinstance(pluginid, str) and isinstance(hookName, str) and callable(handler), ""
-		self._plugins._connections.append((self.NAME, pluginid.replace('-', ''), hookName, handler))
+	def connectPlugin(cls, pluginid, plugin_name):
+		"""
+		Connect to other plugins
+		Params:
+			pluginid: PluginID of the plugin you want to connect to
+			plugin_name: Name you want to referrer the other plugin as
 
-	def newHook(self, hookName):
-		assert isinstance(hookName, str), ""
+		Other methods of other plugins can be used as such: self.plugin_name.method()
+		"""
+
+		class OtherHPlugin:
+
+			def __init__(self, pluginid):
+				self._id = pluginid.replace('-', '')
+	
+			def __getattr__(self, key):
+				try:
+					plugin = registered._pluginsbyids[self._id]
+					
+					pluginmethod = getattr(plugin, key, None)
+					if pluginmethod:
+						return pluginmethod 
+					else:
+						raise PluginMethodError(key)
+				except KeyError:
+					raise PluginIDError(self._id)
+
+		setattr(cls, plugin_name, OtherHPlugin(pluginid))
+
+	def connectHook(self, pluginid, hook_name, handler):
+		"""
+		Connect to other plugins' hooks
+		Params:
+			pluginid: PluginID of the plugin that has the hook you want to connect to
+			hook_name: Exact name of the hook you want to connect to
+			handler: Your custom method that should be executed when the other plugin uses its hook.
+		"""
+
+		assert isinstance(pluginid, str) and isinstance(hook_name, str) and callable(handler), ""
+		registered._connections.append((self.NAME, pluginid.replace('-', ''), hook_name, handler))
+
+	def createHook(self, hook_name):
+		"""
+		Create hooks that other plugins can extend
+		Params:
+			hook_name: Name of the hook you want to create.
+		
+		Hook will be used as such: self.hook_name()
+		"""
+
+		assert isinstance(hook_name, str), ""
 
 		class Hook:
 			_handlers = set()
@@ -134,14 +184,13 @@ class HPluginMeta(pyqtWrapperType):
 				return handler_returns
 
 		h = Hook()
-
-		self._plugins.hooks[self.ID][hookName] = h
+		registered.hooks[self.ID][hook_name] = h
 
 	def __getattr__(self, key):
 		try:
-			return self._plugins.hooks[self.ID][key]
+			return registered.hooks[self.ID][key]
 		except KeyError:
-			return None
+			return PluginMethodError(key)
 
 #def startConnectionLoop():
 #	def autoConnectHooks():
