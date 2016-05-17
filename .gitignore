@@ -239,3 +239,4 @@ FakesAssemblies/
 *.hpdb
 /plugins/core/test2hplugin.py
 /plugins/core/testhplugin.py
+/plugins/core2

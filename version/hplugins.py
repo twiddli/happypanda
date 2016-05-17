@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 import threading
+import sys
 
 from PyQt5.QtCore import pyqtWrapperType
 
@@ -53,7 +54,7 @@ class Plugins:
 				log_e("Could not find pluginhook with name: {}".format(h_name))
 				return
 		
-			h.addHandler(handler)
+			h.addHandler(handler, (plugin_name, pluginid))
 		return True
 
 	def __getattr__(self, key):
@@ -115,7 +116,7 @@ class HPluginMeta(pyqtWrapperType):
 
 		setattr(cls, "connectPlugin", cls.connectPlugin)
 		setattr(cls, "newHook", cls.createHook)
-		setattr(cls, "registerHook", cls.connectHook)
+		setattr(cls, "connectHook", cls.connectHook)
 		setattr(cls, "__getattr__", cls.__getattr__)
 
 		registered.register(cls)
@@ -174,13 +175,16 @@ class HPluginMeta(pyqtWrapperType):
 
 		class Hook:
 			_handlers = set()
-			def addHandler(self, handler):
-				self._handlers.add(handler)
+			def addHandler(self, handler, pluginfo):
+				self._handlers.add((handler, pluginfo))
 
 			def __call__(self, *args, **kwargs):
 				handler_returns = []
-				for handlers in self._handlers:
-					handler_returns.append(handlers(*args, **kwargs))
+				for handlers, pluginfo in self._handlers:
+					try:
+						handler_returns.append(handlers(*args, **kwargs))
+					except Exception as e:
+						raise PluginError("{}:{}".format(pluginfo[0], pluginfo[1]))
 				return handler_returns
 
 		h = Hook()

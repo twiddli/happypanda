@@ -124,23 +124,24 @@ def start(test=False):
 	log_i('Loading plugins...')
 	pluginpaths = []
 	pluginpath = app_constants.plugin_dir
-	sys.path.insert(0, pluginpath)
 	for pdir in os.listdir(pluginpath):
-		for files in os.listdir(os.path.join(pluginpath, pdir)):
+		ppath = os.path.join(pluginpath, pdir)
+		for files in os.listdir(ppath):
 			if files.lower().endswith("hplugin.py"):
-				pluginpaths.append("{}.{}".format(pdir, os.path.splitext(files)[0]))
+				pluginpaths.append((os.path.splitext(files)[0], ppath))
 
-	for plug in pluginpaths:
+	for plug, plugpath in pluginpaths:
+		sys.path.insert(0, plugpath)
 		mod = importlib.import_module(plug)
 		mod = importlib.reload(mod)
-		plugclass = mod.mountpoint()
+		plugclass = mod.init()
 		log_i("Loading {}".format(plugclass.__name__))
 		hplugins.HPluginMeta(plugclass.__name__, plugclass.__bases__, dict(plugclass.__dict__))
+		sys.path.pop(0)
 
 	hplugins.registered._connectHooks()
 	#hplugins.startConnectionLoop()
 
-	sys.path.pop(0)
 
 	log_i('Starting Happypanda...'.format(app_constants.vs))
 	if args.debug:

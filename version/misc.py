@@ -1052,13 +1052,12 @@ class GalleryMenu(QMenu):
 			add_to_ignore = self.addAction('Ignore and remove',
 								  self.add_to_ignore)
 		self.addSeparator()
-
 		# plugin menus
 		plug_menus = hooks.registered.Core.galleryMenu()
 		if plug_menus:
 			for txt, handler in plug_menus:
 				if callable(handler):
-					self.addAction(txt, handler)
+					self.addAction(txt, lambda: handler([idx.data(Qt.UserRole+1) for idx in self.selected or [index]]))
 			self.addSeparator()
 
 		if not self.selected and isinstance(view, QTableView):

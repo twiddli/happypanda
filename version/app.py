@@ -156,8 +156,7 @@ class AppWindow(QMainWindow):
 			else:
 				settings.set(app_constants.vs, 'Application', 'version')
 			if app_constants.UPDATE_VERSION != app_constants.vs:
-				self.notif_bubble.update_text(
-					"Happypanda has been updated!",
+				self.notif_bubble.update_text("Happypanda has been updated!",
 					"Don't forget to check out what's new in this version <a href='https://github.com/Pewpews/happypanda/blob/master/CHANGELOG.md'>by clicking here!</a>")
 			else:
 				hello = ["Hello!", "Hi!", "Onii-chan!", "Senpai!", "Hisashiburi!", "Welcome!", "Okaerinasai!", "Welcome back!", "Hajimemashite!"]
@@ -250,7 +249,8 @@ class AppWindow(QMainWindow):
 		self._main_layout.addWidget(self.sidebar_list)
 		self.current_manga_view = self.default_manga_view
 
-		#self.display_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+		#self.display_widget.setSizePolicy(QSizePolicy.Expanding,
+		#QSizePolicy.Preferred)
 		self.download_window = io_misc.GalleryDownloader(self)
 		self.download_window.hide()
 		# init toolbar
@@ -349,8 +349,7 @@ class AppWindow(QMainWindow):
 		if not parent:
 			parent = self
 		text = "Which gallery do you want to extract metadata from?"
-		s_gallery_popup = misc.SingleGalleryChoices(gallery, title_url_list,
-											  text, parent)
+		s_gallery_popup = misc.SingleGalleryChoices(gallery, title_url_list, text, parent)
 		s_gallery_popup.USER_CHOICE.connect(queue.put)
 
 	def get_metadata(self, gal=None):
@@ -458,8 +457,7 @@ class AppWindow(QMainWindow):
 		t = self.current_manga_view.get_current_view().gallery_model.rowCount()
 		g_l = self.get_current_view().sort_model.current_gallery_list
 		if g_l:
-			self.stat_info.setText(
-				"<b><i>{}</i></b> | Showing {} of {} ".format(g_l.name, r, t))
+			self.stat_info.setText("<b><i>{}</i></b> | Showing {} of {} ".format(g_l.name, r, t))
 		else:
 			self.stat_info.setText("Showing {} of {} ".format(r, t))
 
@@ -961,7 +959,7 @@ class AppWindow(QMainWindow):
 					#	return
 
 
-				def finished(): app_constants.SCANNING_FOR_GALLERIES = False;
+				def finished(): app_constants.SCANNING_FOR_GALLERIES = False
 
 				new_gall_spinner = misc.Spinner(self)
 				new_gall_spinner.set_text("Gallery Scan")

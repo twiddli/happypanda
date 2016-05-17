@@ -496,7 +496,7 @@ class GalleryDB(DBBase):
 		Note: key will be normcased
 		"""
 		#pdb.set_trace()
-		if not galleries:
+		if galleries is None:
 			galleries = app_constants.GALLERY_DATA + app_constants.GALLERY_ADDITION_DATA
 
 		if filter:
@@ -1884,6 +1884,7 @@ class Chapter:
 		self.gallery.last_read = datetime.datetime.now().replace(microsecond=0)
 		execute(GalleryDB.modify_gallery, True, self.gallery.id, times_read=self.gallery.times_read,
 							   last_read=self.gallery.last_read)
+		app_constants.coreplugin.afterChapterOpen(self)
 
 class ChaptersContainer:
 	"""

@@ -64,6 +64,7 @@ coreplugin = hplugins.HPluginMeta(CoreHPlugin.__name__, CoreHPlugin.__bases__, d
 
 # hooks
 coreplugin.createHook("galleryMenu") # used by gallery menu
+coreplugin.createHook("afterChapterOpen") # used when opening gallery chapter
 
 INTERNAL_LEVEL = 7
 FIRST_TIME_LEVEL = get(7, 'Application', 'first time level', int)
