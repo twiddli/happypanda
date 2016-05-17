@@ -9,11 +9,11 @@ import utils
 import app_constants
 
 log = logging.getLogger(__name__)
-log_i = log.info
-log_d = log.debug
-log_w = log.warning
-log_e = log.error
-log_c = log.critical
+log_i = lambda a: None
+log_d = lambda a: None
+log_w = lambda a: None
+log_e = lambda a: None
+log_c = lambda a: None
 
 def _rounded_qimage(qimg, radius):
 	r_image = QImage(qimg.width(), qimg.height(), QImage.Format_ARGB32)
