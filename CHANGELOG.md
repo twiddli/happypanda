@@ -1,5 +1,5 @@
 *Happypanda v0.30*
-- Someone finally convinced me to add star ratings
+- Someone finally convinced me into adding star ratings
     - *Note:* Ratings won't be fetched from EH since I find them useless... Though I might make it an option later on. 
     - External viewer icon on galleries has been removed in favor of this
 - Visual make-over
