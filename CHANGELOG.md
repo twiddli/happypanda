@@ -1,9 +1,14 @@
 *Happypanda v0.30*
 - Someone finally convinced me to add star ratings
     - *Note:* Ratings won't be fetched from EH since I find them useless... Though I might make it an option later on. 
+    - External viewer icon on galleries has been removed in favor of this
 - Visual make-over
 - Improved how thumbnails are loaded in gridview
 - Moving files into a monitored folder will now automatically add the galleries into your inbox 
+- Added the following special namespaced tags:
+    - `path:none` to filter galleries that has a broken source
+    - `rating:integer` to filter galleries that has been rated `integer`
+    - read more about them [here](https://github.com/Pewpews/happypanda/wiki/Gallery-Searching)
 - Updated DB to version 0.26
     - Added `Rating` metadata
 - Fixed bugs:
