@@ -1479,7 +1479,6 @@ class Gallery:
     def __init__(self):
 
         self.id = None # Will be defaulted.
-        self.parent = None
         self.title = ""
         self.profile = ""
         self._path = ""
