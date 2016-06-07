@@ -326,7 +326,7 @@ class GalleryDB(DBBase):
     def modify_gallery(cls, series_id, title=None, profile=None, artist=None, info=None, type=None, fav=None,
                    tags=None, language=None, rating=None, status=None, pub_date=None, link=None,
                    times_read=None, last_read=None, series_path=None, chapters=None, _db_v=None,
-                   hashes=None, exed=None, is_archive=None, path_in_archive=None, view=None):
+                   hashes=None, exed=None, is_archive=None, path_in_archive=None, view=None, date_added=None):
         "Modifies gallery with given gallery id"
         assert isinstance(series_id, int)
         assert not isinstance(series_id, bool)
@@ -378,6 +378,8 @@ class GalleryDB(DBBase):
             executing.append(["UPDATE series SET path_in_archive=? WHERE series_id=?", (path_in_archive, series_id)])
         if view != None:
             executing.append(["UPDATE series SET view=? WHERE series_id=?", (view, series_id)])
+        if date_added != None:
+            executing.append(["UPDATE series SET date_added=? WHERE series_id=?", (date_added, series_id)])
 
         if tags != None:
             assert isinstance(tags, dict)

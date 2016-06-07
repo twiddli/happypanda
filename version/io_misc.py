@@ -676,6 +676,8 @@ class ImpExpData:
                     if self.structure['pub_date'] and self.structure['pub_date'] != 'None':
                         g.pub_date = datetime.datetime.strptime(
                             self.structure['pub_date'], "%Y-%m-%d %H:%M:%S")
+                    g.date_added = datetime.datetime.strptime(
+                            self.structure['date_added'], "%Y-%m-%d %H:%M:%S")
                     g.type = self.structure['type']
                     g.status = self.structure['status']
                     if self.structure['last_read'] and self.structure['last_read'] != 'None':
@@ -772,6 +774,7 @@ class ImportExport(QObject):
             g_data['status'] = g.status
             g_data['pub_date'] = "{}".format(g.pub_date)
             g_data['last_read'] = "{}".format(g.last_read)
+            g_data['date_added'] = "{}".format(g.date_added)
             g_data['times_read'] = g.times_read
             g_data['exed'] = g.exed
             g_data['db_v'] = g._db_v
