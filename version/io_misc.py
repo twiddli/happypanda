@@ -622,7 +622,9 @@ class Watchers:
         for watcher in self.watchers:
             watcher.stop()
 
-class ImpExpData:
+class GalleryImpExpData:
+
+    hash_pages_count = 4
 
     def __init__(self, format=1):
         self.type = format
@@ -630,8 +632,8 @@ class ImpExpData:
             self.structure = ""
         else:
             self.structure = {}
-        self.hash_pages_count = 4
 
+    @classmethod
     def get_pages(self, pages):
         "Returns pages to generate hashes from"
         p = []
@@ -660,67 +662,71 @@ class ImpExpData:
             json.dump(self.structure, fp, indent=4)
 
     def find_pair(self, found_pairs):
-        identifier = self.structure['identifier']
+        identifier = self.structure.get('identifier')
         found = None
-        for g in app_constants.GALLERY_DATA:
-            if not g in found_pairs and g.chapters[0].pages == identifier['pages']:
-                pages = self.get_pages(g.chapters[0].pages)
-                hashes = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
-                for p in hashes:
-                    if hashes[p] != identifier[str(p)]:
-                        break
-                else:
-                    found = g
-                    g.title = self.structure['title']
-                    g.artist = self.structure['artist']
-                    if self.structure['pub_date'] and self.structure['pub_date'] != 'None':
-                        g.pub_date = datetime.datetime.strptime(
-                            self.structure['pub_date'], "%Y-%m-%d %H:%M:%S")
-                    g.date_added = datetime.datetime.strptime(
-                            self.structure['date_added'], "%Y-%m-%d %H:%M:%S")
-                    g.type = self.structure['type']
-                    g.status = self.structure['status']
-                    if self.structure['last_read'] and self.structure['last_read'] != 'None':
-                        g.last_read = datetime.datetime.strptime(
-                            self.structure['last_read'], "%Y-%m-%d %H:%M:%S")
-                    g.times_read += self.structure['times_read']
-                    g._db_v = self.structure['db_v']
-                    g.language = self.structure['language']
-                    g.link = self.structure['link']
-                    g.view = self.structure['view']
-                    g.rating = self.structure['rating']
-                    for ns in self.structure['tags']:
-                        if not ns in g.tags:
-                            g.tags[ns] = []
-                        for tag in self.structure['tags'][ns]:
-                            if not tag in g.tags[ns]:
-                                g.tags[ns].append(tag)
-                    g.exed = self.structure['exed']
-                    g.info = self.structure['info']
-                    g.fav = self.structure['fav']
-                    gallerydb.GalleryDB.modify_gallery(
-                        g.id,
-                        g.title,
-                        artist=g.artist,
-                        info=g.info,
-                        type=g.type,
-                        fav=g.fav,
-                        tags=g.tags,
-                        language=g.language,
-                        status=g.status,
-                        pub_date=g.pub_date,
-                        link=g.link,
-                        times_read=g.times_read,
-                        _db_v=g._db_v,
-                        exed=g.exed,
-                        rating=g.rating,
-                        view=g.view
-                        )
+        if identifier:
+            for g in app_constants.GALLERY_DATA:
+                if not g in found_pairs and g.chapters[0].pages == identifier['pages']:
+                    pages = self.get_pages(g.chapters[0].pages)
+                    hashes = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                    for p in hashes:
+                        if hashes[p] != identifier[str(p)]:
+                            break
+                    else:
+                        found = g
+                        g.title = self.structure['title']
+                        g.artist = self.structure['artist']
+                        if self.structure['pub_date'] and self.structure['pub_date'] != 'None':
+                            g.pub_date = datetime.datetime.strptime(
+                                self.structure['pub_date'], "%Y-%m-%d %H:%M:%S")
+                        g.date_added = datetime.datetime.strptime(
+                                self.structure['date_added'], "%Y-%m-%d %H:%M:%S")
+                        g.type = self.structure['type']
+                        g.status = self.structure['status']
+                        if self.structure['last_read'] and self.structure['last_read'] != 'None':
+                            g.last_read = datetime.datetime.strptime(
+                                self.structure['last_read'], "%Y-%m-%d %H:%M:%S")
+                        g.times_read += self.structure['times_read']
+                        g._db_v = self.structure['db_v']
+                        g.language = self.structure['language']
+                        g.link = self.structure['link']
+                        g.view = self.structure['view']
+                        g.rating = self.structure['rating']
+                        for ns in self.structure['tags']:
+                            if not ns in g.tags:
+                                g.tags[ns] = []
+                            for tag in self.structure['tags'][ns]:
+                                if not tag in g.tags[ns]:
+                                    g.tags[ns].append(tag)
+                        g.exed = self.structure['exed']
+                        g.info = self.structure['info']
+                        g.fav = self.structure['fav']
+                        gallerydb.GalleryDB.modify_gallery(
+                            g.id,
+                            g.title,
+                            artist=g.artist,
+                            info=g.info,
+                            type=g.type,
+                            fav=g.fav,
+                            tags=g.tags,
+                            language=g.language,
+                            status=g.status,
+                            pub_date=g.pub_date,
+                            link=g.link,
+                            times_read=g.times_read,
+                            _db_v=g._db_v,
+                            exed=g.exed,
+                            rating=g.rating,
+                            view=g.view
+                            )
 
-            if found:
-                break
+                if found:
+                    break
 
         return found
+
+class ListImpData:
+    pass
 
 class ImportExport(QObject):
     finished = pyqtSignal()
@@ -734,30 +740,72 @@ class ImportExport(QObject):
     def import_data(self, path):
         with open(path, 'r', encoding='utf-8') as fp:
             data = json.load(fp)
-            data_count = len(data)
-            self.amount.emit(data_count)
             pairs_found = []
-            for prog, g_id in enumerate(data, 1):
-                g_data = ImpExpData()
-                g_data.structure.update(data[g_id])
+            galleries = data["galleries"] if "galleries" in data else data
+            data_count = len(galleries)
+            self.amount.emit(data_count)
+            for prog, g_id in enumerate(galleries, 1):
+                g_data = GalleryImpExpData()
+                g_data.structure.update(galleries[g_id])
                 g = g_data.find_pair(pairs_found)
                 if g:
                     pairs_found.append(g)
                 self.imported_g.emit(
                     "Importing database file... ({}/{} imported)".format(len(pairs_found), data_count))
                 self.progress.emit(prog)
+
+            if "lists" in data:
+                data_count = len(data["lists"])
+                self.amount.emit(data_count)
+                for prog, l_id in enumerate(data['lists'], 1):
+                    list_data = data['lists'][l_id]
+
+                    g_list = None
+                    for g_l in app_constants.GALLERY_LISTS:
+                        if g_l.name == list_data["name"]:
+                            g_list = g_l
+                            break
+                    if not g_list:
+                        g_list = gallerydb.GalleryList(list_data["name"])
+                        g_list.add_to_db()
+                       
+                    g_list.type = list_data["type"]
+                    g_list.filter = list_data["filter"]
+                    g_list.enforce = list_data["enforce"]
+                    g_list.regex = list_data["regex"]
+                    g_list.case = list_data["case"]
+                    g_list.strict = list_data["strict"]
+
+                    # ineffiecent, go through gallery data once
+                    for g in app_constants.GALLERY_DATA:
+                        pages = GalleryImpExpData.get_pages(g.chapters[0].pages)
+                        hashes = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                        p_hashes = {}
+                        for p in hashes:
+                            p_hashes[str(p)] = hashes[p]
+                        for g_id in list_data["galleries"]:
+                            if p_hashes == list_data["galleries"][g_id]["identifier"]:
+                                g_list.add_gallery(g, _check_filter=False)
+                                break
+                    
+                    self.imported_g.emit("Importing gallery lists")
+                    self.progress.emit(prog)
             self.finished.emit()
 
     def export_data(self, gallery=None):
         galleries = []
+        export_lists = False
         if gallery:
             galleries.append(gallery)
         else:
             galleries = app_constants.GALLERY_DATA
+            exports_lists = True
 
         amount = len(galleries)
         log_i("Exporting {} galleries".format(amount))
-        data = ImpExpData(app_constants.EXPORT_FORMAT)
+        data = GalleryImpExpData(app_constants.EXPORT_FORMAT)
+        galleries = {}
+        data.add_data("galleries", galleries)
         self.amount.emit(amount)
         for prog, g in enumerate(galleries, 1):
             log_d("Exporting {} out of {} galleries".format(prog, amount))
@@ -795,8 +843,33 @@ class ImportExport(QObject):
             for n in pages:
                 g_data['identifier'][n] = h_list[n]
 
-            data.add_data(str(g.id), g_data)
+            galleries[str(g.id)] = g_data
             self.progress.emit(prog)
+
+        lists = {}
+        for l in app_constants.GALLERY_LISTS:
+            lists[str(l._id)] = l_data = {}
+            l_data["name"] = l.name
+            l_data["type"] = l.type
+            l_data["filter"] = l.filter
+            l_data["enforce"] = l.enforce
+            l_data["regex"] = l.regex
+            l_data["case"] = l.case
+            l_data["strict"] = l.strict
+            l_galleries = l_data["galleries"] = {}
+            for g in l._galleries:
+                l_galleries[str(g.id)] = l_gallery = {}
+                pages = data.get_pages(g.chapters[0].pages)
+                h_list = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                if not h_list:
+                    log_e("Failed to export gallery: {}".format(g.title.encode(errors='ignore')))
+                    continue
+                l_gallery['identifier'] = {}
+                for n in pages:
+                    l_gallery['identifier'][n] = h_list[n]
+
+        if lists:
+            data.add_data("lists", lists)
 
         log_i("Finished exporting galleries!")
         data.save(app_constants.EXPORT_PATH)
