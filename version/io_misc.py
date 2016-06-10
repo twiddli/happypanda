@@ -804,8 +804,8 @@ class ImportExport(QObject):
         amount = len(galleries)
         log_i("Exporting {} galleries".format(amount))
         data = GalleryImpExpData(app_constants.EXPORT_FORMAT)
-        galleries = {}
-        data.add_data("galleries", galleries)
+        gallery_data = {}
+        data.add_data("galleries", gallery_data)
         self.amount.emit(amount)
         for prog, g in enumerate(galleries, 1):
             log_d("Exporting {} out of {} galleries".format(prog, amount))
@@ -843,7 +843,7 @@ class ImportExport(QObject):
             for n in pages:
                 g_data['identifier'][n] = h_list[n]
 
-            galleries[str(g.id)] = g_data
+            gallery_data[str(g.id)] = g_data
             self.progress.emit(prog)
 
         lists = {}
@@ -860,7 +860,14 @@ class ImportExport(QObject):
             for g in l._galleries:
                 l_galleries[str(g.id)] = l_gallery = {}
                 pages = data.get_pages(g.chapters[0].pages)
-                h_list = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                try:
+                    h_list = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                except app_constants.InternalPagesMismatch:
+                    if g.chapters.update_chapter_pages(0):
+                        pages = data.get_pages(g.chapters[0].pages)
+                        h_list = gallerydb.HashDB.gen_gallery_hash(g, 0, pages)
+                    else:
+                        h_list = {}
                 if not h_list:
                     log_e("Failed to export gallery: {}".format(g.title.encode(errors='ignore')))
                     continue
