@@ -712,17 +712,20 @@ class GalleryImpExpData:
                             language=g.language,
                             status=g.status,
                             pub_date=g.pub_date,
+                            date_added=g.date_added,
                             link=g.link,
                             times_read=g.times_read,
                             _db_v=g._db_v,
                             exed=g.exed,
                             rating=g.rating,
-                            view=g.view
+                            view=g.view,
+                            last_read=g.last_read
                             )
 
                 if found:
                     break
-
+        else:
+            log_w("Identifier key not found!")
         return found
 
 class ListImpData:
@@ -750,6 +753,8 @@ class ImportExport(QObject):
                 g = g_data.find_pair(pairs_found)
                 if g:
                     pairs_found.append(g)
+                else:
+                    log_w("Could not find pair for id: {}".format(g_id))
                 self.imported_g.emit(
                     "Importing database file... ({}/{} imported)".format(len(pairs_found), data_count))
                 self.progress.emit(prog)
