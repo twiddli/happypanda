@@ -13,10 +13,10 @@ For future plans, see [issues](https://github.com/Pewpews/happypanda/issues)
 For general documentation, check the [wiki](https://github.com/Pewpews/happypanda/wiki)
 
 # Screenshots
-<img src="misc/screenshot1.png" width="300">
-<img src="misc/screenshot2.png" width="300">
-<img src="misc/screenshot3.png" width="300">
-<img src="misc/screenshot4.png" width="300">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot1.png" width="400">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot2.png" width="400">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot3.png" width="400">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot4.png" width="400">
 
 # Features
 - Portable, self-contained in folder and cross-platform
