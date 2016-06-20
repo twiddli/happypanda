@@ -1,1 +1,7 @@
-{"name":"Happypanda","tagline":"A cross platform manga/doujinshi manager with namespace & tag support","body":"For general documentation, check the [wiki](https://github.com/Pewpews/happypanda/wiki)\r\n\r\n# Features\r\n- Portable, self-contained in folder and cross-platform\r\n- 2 view modes: thumbnails in a grid and a simple table\r\n- Advanced gallery search with regex support\r\n- Gallery tagging: userdefined namespaces and tags\r\n- Gallery metadata fetching from the web (Currently only supports g.e-hentai, exhentai and indirectly panda.chaika.moe)\r\n- Gallery downloading from the web (Currently supports g.e-hentai, exhentai and panda.chaika.moe URLs)\r\n- Duplicate detecting when adding galleries\r\n- Multiple ways of adding galleries to make it as convienient as possible! (like folder monitoring, etc.\r\n- Recursive directory/archive scanning. Can treat each subfolder as a gallery (applies to archives too), or as chapters of gallery!\r\n- Supports ZIP/CBZ, RAR/CBR and directories with loose files\r\n- Customizable by lots of settings\r\n- And lots more...\r\n","google":"","note":"Don't delete this file! It's used internally to help with page regeneration."}
+{
+  "name": "Happypanda",
+  "tagline": "A cross platform manga/doujinshi manager with namespace & tag support",
+  "body": "# Moved to [pewpew.moe](http://pewpew.moe/project/happypanda)\r\n",
+  "google": "",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
