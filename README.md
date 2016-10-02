@@ -1,4 +1,4 @@
-###### *[updated 13/3]* I will be taking a longer break from Happypanda to focus on my other projects (and more on school since exams are coming up). I'll probably start working on new features again in summer.. I'll still be available to answer issues, mails and gitter chat.
+# I want to start over! See: https://github.com/Pewpews/happypanda/issues/162
 
 I'm available in the gitter chat if you have any questions!
 
