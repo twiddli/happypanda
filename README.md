@@ -1,5 +1,7 @@
 # I want to start over! See: https://github.com/Pewpews/happypanda/issues/162
 
+## I'm also looking for someone who might want to help. Requirement is Python only.
+
 I'm available in the gitter chat if you have any questions!
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Pewpews/happypanda?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
