@@ -1,6 +1,4 @@
-# I want to start over! See: https://github.com/Pewpews/happypanda/issues/162
-
-## I'm also looking for someone who might want to help. Requirement is Python only.
+## I'm looking for someone who want to work on the frontend. Language of your choice. 
 
 I'm available in the gitter chat if you have any questions!
 
