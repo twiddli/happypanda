@@ -1,4 +1,5 @@
-## I'm looking for someone who want to work on the frontend. Language of your choice. 
+### I will now be posting progress updates on twitter[(@pewspew)](https://twitter.com/pewspew) if you're interested.
+### I'm looking for someone who want to work on the frontend. Language of your choice. 
 
 I'm available in the gitter chat if you have any questions!
 
