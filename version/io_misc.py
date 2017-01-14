@@ -331,7 +331,7 @@ class GalleryDownloader(QWidget):
             if exprops.check():
                 manager = pewnet.ExHenManager()
             else:
-                return
+                raise app_constants.NeedLogin()
         elif regex_validate("(panda\.chaika\.moe\/(archive|gallery)\/[0-9]+)"):
             manager = pewnet.ChaikaManager()
         else:

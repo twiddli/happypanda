@@ -238,3 +238,9 @@ FakesAssemblies/
 /res/sample.png
 *.hpdb
 /plugins
+/compilerconfig.json
+/compilerconfig.json.defaults
+/happypanda.VC.db
+/happypanda.VC.VC.opendb
+/.vs/config/applicationhost.config
+/data/happypanda.db

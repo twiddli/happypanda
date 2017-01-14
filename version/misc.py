@@ -243,6 +243,8 @@ class SortMenu(QMenu):
         s_times_read.triggered.connect(functools.partial(self.new_sort.emit, 'times_read'))
         s_last_read = self.sort_actions.addAction(QAction("Last Read", self.sort_actions, checkable=True))
         s_last_read.triggered.connect(functools.partial(self.new_sort.emit, 'last_read'))
+        s_rating = self.sort_actions.addAction(QAction("Rating", self.sort_actions, checkable=True))
+        s_rating.triggered.connect(functools.partial(self.new_sort.emit, 'rating'))
 
         self.addAction(asc_desc_act)
         self.addSeparator()
@@ -252,6 +254,7 @@ class SortMenu(QMenu):
         self.addAction(s_pub_d)
         self.addAction(s_times_read)
         self.addAction(s_last_read)
+        self.addAction(s_rating)
 
         self.set_current_sort()
 
@@ -273,6 +276,8 @@ class SortMenu(QMenu):
                 check_key(act, 'times_read')
             elif act.text() == 'Last Read':
                 check_key(act, 'last_read')
+            elif act.text() == 'Rating':
+                check_key(act, 'rating')
 
     def asc_desc(self):
         if self.parent_widget.current_manga_view.sort_model.sortOrder() == Qt.AscendingOrder:
@@ -1097,7 +1102,7 @@ class GalleryMenu(QMenu):
         rating = self.addAction('Set rating')
         rating_menu = QMenu(self)
         rating.setMenu(rating_menu)
-        for x in range(1, 6):
+        for x in range(0, 6):
             rating_menu.addAction('{}'.format(x), functools.partial(self.set_rating, x))
         edit = self.addAction('Edit', lambda: self.edit_gallery.emit(self.parent_widget,
                                             self.index.data(Qt.UserRole + 1) if not self.selected else [idx.data(Qt.UserRole + 1) for idx in self.selected]))

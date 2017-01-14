@@ -474,12 +474,12 @@ class SideBarWidget(QFrame):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.parent_widget = parent
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.parent_widget
         self._widget_layout = QHBoxLayout(self)
 
         # widget stuff
         self._d_widget = QWidget(self)
+        self._d_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         self._widget_layout.addWidget(self._d_widget)
         self.main_layout = QVBoxLayout(self._d_widget)
         self.main_layout.setSpacing(0)

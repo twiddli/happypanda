@@ -414,6 +414,7 @@ class GalleryModel(QAbstractTableModel):
     LAST_READ_ROLE = Qt.UserRole + 7
     TIME_ROLE = Qt.UserRole + 8
     RATING_ROLE = Qt.UserRole + 9
+    RATING_COUNT = Qt.UserRole + 10
 
     ROWCOUNT_CHANGE = pyqtSignal()
     STATUSBAR_MSG = pyqtSignal(str)
@@ -594,6 +595,9 @@ class GalleryModel(QAbstractTableModel):
 
         if role == self.RATING_ROLE:
             return StarRating(current_gallery.rating)
+
+        if role == self.RATING_COUNT:
+            return current_gallery.rating
 
         return None
 
@@ -1301,6 +1305,10 @@ class MangaView(QListView):
                 self.sort_model.setSortRole(GalleryModel.LAST_READ_ROLE)
                 self.sort_model.sort(0, Qt.DescendingOrder)
                 self.current_sort = 'last_read'
+            elif name == 'rating':
+                self.sort_model.setSortRole(GalleryModel.RATING_COUNT)
+                self.sort_model.sort(0, Qt.DescendingOrder)
+                self.current_sort = 'rating'
 
     def contextMenuEvent(self, event):
         CommonView.contextMenuEvent(self, event)
