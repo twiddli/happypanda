@@ -173,8 +173,10 @@ class SortFilterModel(QSortFilterProxyModel):
         self._data = app_constants.GALLERY_DATA
         self._search_ready = False
         self.current_term = ''
+        self._history_count = 50
+        self._prev_term = ''
         self.terms_history = []
-        self.current_term_history = 0
+        self.current_term_history = -1
         self.current_gallery_list = None
         self.current_args = []
         self.current_view = self.CAT_VIEW
@@ -186,6 +188,8 @@ class SortFilterModel(QSortFilterProxyModel):
 
     def navigate_history(self, direction=PREV):
         new_term = ''
+        print("History:", self.terms_history)
+        print("Current Position:", self.current_term_history)
         if self.terms_history:
             if direction == self.NEXT:
                 if self.current_term_history < len(self.terms_history) - 1:
@@ -196,6 +200,7 @@ class SortFilterModel(QSortFilterProxyModel):
             new_term = self.terms_history[self.current_term_history]
             if new_term != self.current_term:
                 self.init_search(new_term, history=False)
+        print("New Position:", self.current_term_history)
         return new_term
 
     def set_gallery_list(self, g_list=None):
@@ -238,13 +243,21 @@ class SortFilterModel(QSortFilterProxyModel):
             args = self.current_args
         history = kwargs.pop('history', True)
         if history:
-            if len(self.terms_history) > 10:
-                self.terms_history = self.terms_history[-10:]
-            self.terms_history.append(term)
+            if self._prev_term != term:
+                self._prev_term = term
 
-            self.current_term_history = len(self.terms_history) - 1
-            if self.current_term_history < 0:
-                self.current_term_history = 0
+                # ny path
+                if self.current_term_history != len(self.terms_history) - 1:
+                    self.terms_history = self.terms_history[:self.current_term_history+1]
+
+                if len(self.terms_history) > self._history_count:
+                    self.terms_history = self.terms_history[-self._history_count:]
+                self.terms_history.append(term)
+
+
+                self.current_term_history = len(self.terms_history) - 1
+                if self.current_term_history < 0:
+                    self.current_term_history = 0
 
         self.current_term = term
         if not history:
@@ -1467,7 +1480,11 @@ class CommonView:
                 chap_numb = random.randint(0, b - 1)
 
         CommonView.scroll_to_index(view_cls, view_cls.sort_model.index(indx.row(), 0))
-        indx.data(Qt.UserRole + 1).chapters[chap_numb].open()
+        try:
+            indx.data(Qt.UserRole + 1).chapters[chap_numb].open()
+        except KeyError:
+            log.exception("Failed to open chapter")
+            return;
 
     @staticmethod
     def scroll_to_index(view_cls, idx, select=True):
@@ -1632,6 +1649,7 @@ class MangaViews:
                 if not gallery.profile:
                     Executors.generate_thumbnail(gallery, on_method=gallery.set_profile)
         self.list_view.gallery_model.insertRows(self.list_view.gallery_model.rowCount(), rows)
+        self.list_view.sort_model.refresh()
         
     def replace_gallery(self, list_of_gallery, db_optimize=True):
         "Replaces the view and DB with given list of gallery, at given position"

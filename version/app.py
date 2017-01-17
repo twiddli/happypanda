@@ -506,7 +506,7 @@ class AppWindow(QMainWindow):
         self.toolbar.setIconSize(QSize(20,20))
 
         spacer_start = QWidget() # aligns the first actions properly
-        spacer_start.setFixedSize(QSize(10, 1))
+        spacer_start.setFixedSize(QSize(5, 1))
         self.toolbar.addWidget(spacer_start)
 
         def switch_view(fav):
@@ -533,12 +533,14 @@ class AppWindow(QMainWindow):
 
         gallery_menu = QMenu()
         gallery_action = QToolButton()
+        gallery_action.setIcon(app_constants.PLUS_ICON)
+        gallery_action.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         gallery_action.setShortcut(gallery_k)
         gallery_action.setText('Gallery ')
         gallery_action.setPopupMode(QToolButton.InstantPopup)
         gallery_action.setToolTip('Contains various gallery related features')
         gallery_action.setMenu(gallery_menu)
-        add_gallery_icon = QIcon(app_constants.PLUS_PATH)
+        add_gallery_icon = QIcon(app_constants.PLUS_ICON)
         gallery_action_add = QAction(add_gallery_icon, "Add single gallery...", self)
         gallery_action_add.triggered.connect(lambda: gallery.CommonView.spawn_dialog(self))
         gallery_action_add.setToolTip('Add a single gallery thoroughly')
@@ -555,37 +557,60 @@ class AppWindow(QMainWindow):
         populate_action.setShortcut(new_populate_k)
         gallery_menu.addAction(populate_action)
         gallery_menu.addSeparator()
-        metadata_action = QAction('Get metadata for all galleries', self)
-        metadata_action.triggered.connect(self.get_metadata)
-        metadata_action.setShortcut(get_all_metadata_k)
-        gallery_menu.addAction(metadata_action)
         scan_galleries_action = QAction('Scan for new galleries', self)
         scan_galleries_action.triggered.connect(self.scan_for_new_galleries)
         scan_galleries_action.setStatusTip('Scan monitored folders for new galleries')
         scan_galleries_action.setShortcut(scan_galleries_k)
         gallery_menu.addAction(scan_galleries_action)
 
-        gallery_action_random = gallery_menu.addAction("Open random gallery")
-        gallery_action_random.triggered.connect(lambda: gallery.CommonView.open_random_gallery(self.get_current_view()))
-        gallery_action_random.setShortcut(open_random_k)
         self.toolbar.addWidget(gallery_action)
 
-        tools_k = QKeySequence('Alt+T')
-        misc_action = QToolButton()
-        misc_action.setText('Tools ')
-        misc_action.setShortcut(tools_k)
-        misc_action_menu = QMenu()
-        misc_action.setMenu(misc_action_menu)
-        misc_action.setPopupMode(QToolButton.InstantPopup)
-        misc_action.setToolTip("Contains misc. features")
-        gallery_downloader = QAction("Gallery Downloader", misc_action_menu)
-        gallery_downloader.triggered.connect(self.download_window.show)
+        spacer_tool = QWidget() 
+        spacer_tool.setFixedSize(QSize(5, 1))
+        self.toolbar.addWidget(spacer_tool)
+
+        metadata_action = QToolButton()
+        metadata_action.setText('Fetch all metadata')
+        metadata_action.clicked.connect(self.get_metadata)
+        metadata_action.setIcon(app_constants.DOWNLOAD_ICON)
+        metadata_action.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        metadata_action.setShortcut(get_all_metadata_k)
+        self.toolbar.addWidget(metadata_action)
+
+        spacer_tool2 = QWidget() 
+        spacer_tool2.setFixedSize(QSize(3, 1))
+        self.toolbar.addWidget(spacer_tool2)
+
+        duplicate_check_simple = QToolButton()
+        duplicate_check_simple.setText("Check duplicates")
+        duplicate_check_simple.setIcon(app_constants.DUPLICATE_ICON)
+        duplicate_check_simple.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        duplicate_check_simple.clicked.connect(lambda: self.duplicate_check()) # triggered emits False
+        self.toolbar.addWidget(duplicate_check_simple)
+
+        spacer_tool3 = QWidget() 
+        spacer_tool3.setFixedSize(QSize(3, 1))
+        self.toolbar.addWidget(spacer_tool3)
+        
+        gallery_action_random = QToolButton()
+        gallery_action_random.setText("Open random gallery")
+        gallery_action_random.clicked.connect(lambda: gallery.CommonView.open_random_gallery(self.get_current_view()))
+        gallery_action_random.setIcon(app_constants.RANDOM_ICON)
+        gallery_action_random.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        gallery_action_random.setShortcut(open_random_k)
+        self.toolbar.addWidget(gallery_action_random)
+
+        spacer_tool3 = QWidget() 
+        spacer_tool3.setFixedSize(QSize(5, 1))
+        self.toolbar.addWidget(spacer_tool3)
+
+        gallery_downloader = QToolButton()
+        gallery_downloader.setText("Downloader")
+        gallery_downloader.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        gallery_downloader.clicked.connect(self.download_window.show)
         gallery_downloader.setShortcut(gallery_downloader_k)
-        misc_action_menu.addAction(gallery_downloader)
-        duplicate_check_simple = QAction("Simple Duplicate Finder", misc_action_menu)
-        duplicate_check_simple.triggered.connect(lambda: self.duplicate_check()) # triggered emits False
-        misc_action_menu.addAction(duplicate_check_simple)
-        self.toolbar.addWidget(misc_action)
+        gallery_downloader.setIcon(app_constants.MANAGER_ICON)
+        self.toolbar.addWidget(gallery_downloader)
 
         # debug specfic code
         if app_constants.DEBUG:
@@ -605,22 +630,28 @@ class AppWindow(QMainWindow):
         sort_k = QKeySequence('Alt+S')
 
         def set_new_sort(s):
+            print(s)
             self.current_manga_view.list_view.sort(s)
 
         sort_action = QToolButton()
         sort_action.setShortcut(sort_k)
-        sort_action.setIcon(QIcon(app_constants.SORT_PATH))
+        sort_action.setIcon(app_constants.SORT_ICON)
         sort_menu = misc.SortMenu(self, self.toolbar)
         sort_menu.new_sort.connect(set_new_sort)
         sort_action.setMenu(sort_menu)
         sort_action.setPopupMode(QToolButton.InstantPopup)
         self.toolbar.addWidget(sort_action)
+
+        spacer_tool4 = QWidget() 
+        spacer_tool4.setFixedSize(QSize(5, 1))
+        self.toolbar.addWidget(spacer_tool4)
         
         togle_view_k = QKeySequence('Alt+Space')
 
-        self.grid_toggle_g_icon = QIcon(app_constants.GRID_PATH)
-        self.grid_toggle_l_icon = QIcon(app_constants.LIST_PATH)
+        self.grid_toggle_g_icon = app_constants.GRID_ICON
+        self.grid_toggle_l_icon = app_constants.LIST_ICON
         self.grid_toggle = QToolButton()
+        self.grid_toggle.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.grid_toggle.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.grid_toggle.setShortcut(togle_view_k)
         if self.current_manga_view.current_view == gallery.MangaViews.View.List:
@@ -635,15 +666,17 @@ class AppWindow(QMainWindow):
         spacer_mid2.setFixedSize(QSize(5, 1))
         self.toolbar.addWidget(spacer_mid2)
 
-
-        self.search_bar = misc.LineEdit()
-        search_options = self.search_bar.addAction(QIcon(app_constants.SEARCH_OPTIONS_PATH), QLineEdit.TrailingPosition)
+        search_options = QToolButton()
+        search_options.setIconSize(QSize(15,15))
+        search_options.setPopupMode(QToolButton.InstantPopup)
+        self.toolbar.addWidget(search_options)
+        search_options.setIcon(app_constants.SEARCH_ICON)
         search_options_menu = QMenu(self)
-        search_options.triggered.connect(lambda: search_options_menu.popup(QCursor.pos()))
         search_options.setMenu(search_options_menu)
         case_search_option = search_options_menu.addAction('Case Sensitive')
         case_search_option.setCheckable(True)
         case_search_option.setChecked(app_constants.GALLERY_SEARCH_CASE)
+
 
         def set_search_case(b):
             app_constants.GALLERY_SEARCH_CASE = b
@@ -651,11 +684,10 @@ class AppWindow(QMainWindow):
             settings.save()
 
         case_search_option.toggled.connect(set_search_case)
-
+        search_options_menu.addSeparator()
         strict_search_option = search_options_menu.addAction('Match whole terms')
         strict_search_option.setCheckable(True)
         strict_search_option.setChecked(app_constants.GALLERY_SEARCH_STRICT)
-
 
         regex_search_option = search_options_menu.addAction('Regex')
         regex_search_option.setCheckable(True)
@@ -680,6 +712,20 @@ class AppWindow(QMainWindow):
             settings.save()
 
         regex_search_option.toggled.connect(set_search_regex)
+
+        self.search_bar = misc.LineEdit()
+
+        remove_txt = self.search_bar.addAction(app_constants.CROSS_ICON, QLineEdit.LeadingPosition)
+        refresh_search = self.search_bar.addAction(app_constants.REFRESH_ICON, QLineEdit.TrailingPosition)
+        refresh_search.triggered.connect(self.current_manga_view.get_current_view().sort_model.refresh)
+        remove_txt.setVisible(False)
+        def clear_txt():
+            self.search_bar.setText("")
+            self.search_bar.returnPressed.emit()
+        remove_txt.triggered.connect(clear_txt)
+        def hide_cross(txt):
+            remove_txt.setVisible(bool(txt))
+        self.search_bar.textChanged.connect(hide_cross)
 
         self.search_bar.setObjectName('search_bar')
         self.search_timer = QTimer(self)
@@ -723,15 +769,15 @@ class AppWindow(QMainWindow):
         forward_k = QKeySequence(QKeySequence.Forward)
 
         search_backbutton = QToolButton(self.toolbar)
-        search_backbutton.setText(u'\u25C0')
-        search_backbutton.setFixedWidth(15)
+        search_backbutton.setIcon(app_constants.ARROW_LEFT_ICON)
+        search_backbutton.setFixedWidth(20)
         search_backbutton.clicked.connect(search_history)
         search_backbutton.setShortcut(back_k)
         self.search_backward = self.toolbar.addWidget(search_backbutton)
         self.search_backward.setVisible(False)
         search_forwardbutton = QToolButton(self.toolbar)
-        search_forwardbutton.setText(u'\u25B6')
-        search_forwardbutton.setFixedWidth(15)
+        search_forwardbutton.setIcon(app_constants.ARROW_RIGHT_ICON)
+        search_forwardbutton.setFixedWidth(20)
         search_forwardbutton.clicked.connect(lambda: search_history(None, False))
         search_forwardbutton.setShortcut(forward_k)
         self.search_forward = self.toolbar.addWidget(search_forwardbutton)

@@ -14,10 +14,11 @@
 
 import os, sys, enum
 import settings
+import qtawesome as qta
 from database import db_constants
 
 # Version number
-vs  = '0.30'
+vs  = '0.31'
 DEBUG = False
 
 OS_NAME = ''
@@ -101,28 +102,57 @@ GENERAL_THREAD = None
 WHEEL_SCROLL_EFFECT = 10
 DOWNLOAD_MANAGER = None
 
+# ICONS
+
+# IMPORTANT: Neccessary because qtawesome can't function without an instanced QApplication
+# IMPORTANT: called after instancing qApplication in main.py
+def load_icons():
+    global G_LISTS_ICON_WH
+    global G_LISTS_ICON
+    global LIST_ICON
+    global ARTISTS_ICON
+    global ARTIST_ICON
+    global NSTAGS_ICON
+    global PLUS_ICON
+    global ARROW_RIGHT_ICON
+    global ARROW_LEFT_ICON
+    global GRID_ICON
+    global SEARCH_ICON
+    global CROSS_ICON
+    global CROSS_ICON_WH
+    global MANAGER_ICON
+    global DOWNLOAD_ICON
+    global RANDOM_ICON
+    global DUPLICATE_ICON
+    global SORT_ICON
+    global REFRESH_ICON
+
+    G_LISTS_ICON_WH = qta.icon("fa.bars", color="white")
+    G_LISTS_ICON = qta.icon("fa.bars", color="black")
+    LIST_ICON = qta.icon("fa.bars", color="white")
+    ARTISTS_ICON = qta.icon("fa.users", color="white")
+    ARTIST_ICON = qta.icon("fa.user", color="black")
+    NSTAGS_ICON = qta.icon("fa.sitemap", color="white")
+    PLUS_ICON = qta.icon("fa.plus", color="white")
+    ARROW_RIGHT_ICON = qta.icon("fa.angle-double-right", color="white")
+    ARROW_LEFT_ICON = qta.icon("fa.angle-double-left", color="white")
+    GRID_ICON = qta.icon("fa.th", color="white")
+    SEARCH_ICON = qta.icon("fa.search", color="white")
+    CROSS_ICON = qta.icon("fa.times", color="black")
+    CROSS_ICON_WH = qta.icon("fa.times", color="white")
+    MANAGER_ICON = qta.icon("fa.tasks", color="white")
+    DOWNLOAD_ICON = qta.icon("fa.arrow-circle-o-down", color="white")
+    RANDOM_ICON = qta.icon("fa.random", color="white")
+    DUPLICATE_ICON = qta.icon("fa.files-o", color="white")
+    SORT_ICON = qta.icon("fa.sort-amount-desc", color="white")
+    REFRESH_ICON = qta.icon("fa.refresh", color="black")
+
 # image paths
-SAMPLE_PATH = os.path.join(static_dir, "sample.png")
-SORT_PATH = os.path.join(static_dir, "sort.png")
-GALLERY_ICO_PATH = os.path.join(static_dir, "gallery_ico.ico")
 GALLERY_DEF_ICO_PATH = os.path.join(static_dir, "gallery_def_ico.ico")
 GALLERY_EXT_ICO_PATH = os.path.join(static_dir, "gallery_ext_ico.ico")
 APP_ICO_PATH = os.path.join(static_dir, "happypanda.ico")
-STAR_BTN_PATH = os.path.join(static_dir, "btn_star.png")
-STAR_PATH = os.path.join(static_dir, "star.png")
-STAR_SMALL_PATH = os.path.join(static_dir, "star_small.png")
-PLUS_PATH = os.path.join(static_dir, "plus.png")
-HOME_BTN_PATH = os.path.join(static_dir, "home.png")
 SETTINGS_PATH = os.path.join(static_dir, "settings.png")
-GRID_PATH = os.path.join(static_dir, "grid.png")
-LIST_PATH = os.path.join(static_dir, "list.png")
 NO_IMAGE_PATH = os.path.join(static_dir, "default.jpg")
-SEARCH_OPTIONS_PATH = os.path.join(static_dir, "search_options.png")
-typicons_root = os.path.join(static_dir, "typicons")
-GLIST_PATH = os.path.join(typicons_root, "media-stop-outline.svg")
-GARTIST_PATH = os.path.join(typicons_root, "user-outline.svg")
-GROUP_PATH = os.path.join(typicons_root, "group-outline.svg")
-TAG_PATH = os.path.join(typicons_root, "tags.svg")
 
 # Monitored Paths
 OVERRIDE_MONITOR = False # set true to make watchers to ignore next item (will be set to False)

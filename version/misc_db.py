@@ -114,7 +114,7 @@ class NoTooltipModel(QIdentityProxyModel):
         if role == Qt.ToolTipRole:
             return None
         if role == Qt.DecorationRole:
-            return QPixmap(app_constants.GARTIST_PATH)
+            return app_constants.ARTIST_ICON
         return self.sourceModel().data(index, role)
 
 
@@ -371,7 +371,7 @@ class GalleryLists(QListWidget):
         super().__init__(parent)
         self.gallery_list_edit = GalleryListEdit(parent)
         self.gallery_list_edit.hide()
-        self._g_list_icon = QIcon(app_constants.GLIST_PATH)
+        self._g_list_icon = app_constants.G_LISTS_ICON
         self._font_selected = QFont(self.font())
         self._font_selected.setBold(True)
         self._font_selected.setUnderline(True)
@@ -431,7 +431,7 @@ class GalleryLists(QListWidget):
         new_item = misc.CustomListItem()
         self._in_proccess_item = new_item
         new_item.setFlags(new_item.flags() | Qt.ItemIsEditable)
-        new_item.setIcon(QIcon(app_constants.LIST_PATH))
+        new_item.setIcon(QIcon(app_constants.LIST_ICON))
         self.insertItem(0, new_item)
         if name:
             new_item.setText(name)
@@ -474,7 +474,7 @@ class SideBarWidget(QFrame):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.parent_widget = parent
-        self.parent_widget
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
         self._widget_layout = QHBoxLayout(self)
 
         # widget stuff
@@ -493,6 +493,7 @@ class SideBarWidget(QFrame):
         self.show_all_galleries_btn = QPushButton("Show all galleries")
         self.show_all_galleries_btn.clicked.connect(lambda:parent.manga_list_view.sort_model.set_gallery_list())
         self.show_all_galleries_btn.clicked.connect(self.show_all_galleries_btn.hide)
+        self.show_all_galleries_btn.setIcon(app_constants.CROSS_ICON_WH)
         self.show_all_galleries_btn.hide()
         self.main_layout.addWidget(self.show_all_galleries_btn)
         self.main_buttons_layout = QHBoxLayout()
@@ -501,13 +502,16 @@ class SideBarWidget(QFrame):
         # buttons
         bgroup = QButtonGroup(self)
         bgroup.setExclusive(True)
-        self.lists_btn = QPushButton("Lists")
+        self.lists_btn = QPushButton("")
+        self.lists_btn.setIcon(app_constants.G_LISTS_ICON_WH)
         self.lists_btn.setCheckable(True)
         bgroup.addButton(self.lists_btn)
-        self.artist_btn = QPushButton("Artists")
+        self.artist_btn = QPushButton("")
+        self.artist_btn.setIcon(app_constants.ARTISTS_ICON)
         self.artist_btn.setCheckable(True)
         bgroup.addButton(self.artist_btn)
-        self.ns_tags_btn = QPushButton("NS && Tags")
+        self.ns_tags_btn = QPushButton("")
+        self.ns_tags_btn.setIcon(app_constants.NSTAGS_ICON)
         self.ns_tags_btn.setCheckable(True)
         bgroup.addButton(self.ns_tags_btn)
         self.lists_btn.setChecked(True)
@@ -525,7 +529,7 @@ class SideBarWidget(QFrame):
         gallery_lists_dummy = QWidget(self)
         self.lists = GalleryLists(self)
         create_new_list_btn = QPushButton()
-        create_new_list_btn.setIcon(QIcon(app_constants.PLUS_PATH))
+        create_new_list_btn.setIcon(QIcon(app_constants.PLUS_ICON))
         create_new_list_btn.setIconSize(QSize(15, 15))
         create_new_list_btn.clicked.connect(lambda: self.lists.create_new_list())
         create_new_list_btn.adjustSize()
@@ -598,7 +602,7 @@ class SideBarWidget(QFrame):
 
     def _init_size(self, event=None):
         h = self.parent_widget.height()
-        self._max_width = 200
+        self._max_width = 250
         self.updateGeometry()
         self.setMaximumWidth(self._max_width)
         self.slide_animation.setStartValue(QSize(self._max_width, h))

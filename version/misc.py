@@ -1090,13 +1090,13 @@ class GalleryMenu(QMenu):
                     add_to_list_menu.addAction(g_list.name, functools.partial(self.add_to_list, g_list))
         self.addSeparator()
         if not self.selected:
-            get_metadata = self.addAction('Get metadata',
+            get_metadata = self.addAction('Fetch metadata',
                                     lambda: self.parent_widget.get_metadata(index.data(Qt.UserRole + 1)))
         else:
             gals = []
             for idx in self.selected:
                 gals.append(idx.data(Qt.UserRole + 1))
-            get_select_metadata = self.addAction('Get metadata for selected',
+            get_select_metadata = self.addAction('Fetch metadata for selected',
                                         lambda: self.parent_widget.get_metadata(gals))
         self.addSeparator()
         rating = self.addAction('Set rating')
