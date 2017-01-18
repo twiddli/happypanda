@@ -1,4 +1,4 @@
-###### *[updated 13/3]* I will be taking a longer break from Happypanda to focus on my other projects (and more on school since exams are coming up). I'll probably start working on new features again in summer.. I'll still be available to answer issues, mails and gitter chat.
+## I'm looking for someone who want to work on the frontend. Language of your choice. 
 
 I'm available in the gitter chat if you have any questions!
 
@@ -13,10 +13,10 @@ For future plans, see [issues](https://github.com/Pewpews/happypanda/issues)
 For general documentation, check the [wiki](https://github.com/Pewpews/happypanda/wiki)
 
 # Screenshots
-<img src="misc/screenshot1.png" width="300">
-<img src="misc/screenshot2.png" width="300">
-<img src="misc/screenshot3.png" width="300">
-<img src="misc/screenshot4.png" width="300">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot1.png" width="700">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot2.png" width="700">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot3.png" width="700">
+<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot4.png" width="700">
 
 # Features
 - Portable, self-contained in folder and cross-platform
