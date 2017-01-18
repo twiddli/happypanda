@@ -1795,7 +1795,12 @@ class Gallery:
         log_i("Moving gallery...")
         log_d("Old gallery path: {}".format(self.path))
         old_head, old_tail = os.path.split(self.path)
-        self.path = utils.move_files(self.path, new_path)
+        try:
+            self.path = utils.move_files(self.path, new_path)
+        except PermissionError:
+            log.exception("Failed to move gallery")
+            app_constants.NOTIF_BAR.add_text("Permission Error: Failed to move gallery ({})".format(self.title))
+            return
         new_head, new_tail = os.path.split(self.path)
         for chap in self.chapters:
             if not chap.in_archive:

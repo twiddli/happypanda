@@ -147,14 +147,21 @@ class AppWindow(QMainWindow):
             #self.db_startup.startup()
             if app_constants.FIRST_TIME_LEVEL != app_constants.INTERNAL_LEVEL:
                 normalize_first_time()
-            else:
-                settings.set(app_constants.vs, 'Application', 'version')
             if app_constants.UPDATE_VERSION != app_constants.vs:
-                self.notif_bubble.update_text("Happypanda has been updated!",
-                    "Don't forget to check out what's new in this version <a href='https://github.com/Pewpews/happypanda/blob/master/CHANGELOG.md'>by clicking here!</a>")
-            else:
-                hello = ["Hello!", "Hi!", "Onii-chan!", "Senpai!", "Hisashiburi!", "Welcome!", "Okaerinasai!", "Welcome back!", "Hajimemashite!"]
-                self.notif_bubble.update_text("{}".format(hello[random.randint(0, len(hello) - 1)]), "Please don't hesitate to report any bugs you find.", 10)
+                settings.set(app_constants.vs, 'Application', 'version')
+
+            if app_constants.UPDATE_VERSION != app_constants.vs:
+                pop = misc.BasePopup(self, blur=False)
+                ml = QVBoxLayout(pop.main_widget)
+                ml.addWidget(QLabel("\nGoodbye Happypanda(old)!\n\n\nHello, this is the last release of 'old' Happypanda.\n"+
+                    "This means that I (personally) won't be adding any new features or fix bugs.\n\n"+
+                    "I have started a new project where I (with the help of others)\n try to create a better Happypanda from scratch.\n\n"+
+                    "Please follow me on twitter (@pewspew) to keep yourself updated!\n"))
+                ml.addLayout(pop.buttons_layout)
+                pop.add_buttons("close")[0].clicked.connect(pop.close)
+                pop.adjustSize()
+                misc.centerWidget(pop, self)
+                pop.show()
 
             if app_constants.ENABLE_MONITOR and \
                 app_constants.MONITOR_PATHS and all(app_constants.MONITOR_PATHS):

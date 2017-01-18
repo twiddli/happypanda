@@ -51,7 +51,7 @@ user_stylesheet_path = ""
 
 INTERNAL_LEVEL = 7
 FIRST_TIME_LEVEL = get(7, 'Application', 'first time level', int)
-UPDATE_VERSION = get('0.25', 'Application', 'version', str)
+UPDATE_VERSION = get('0.31', 'Application', 'version', str)
 FORCE_HIGH_DPI_SUPPORT = get(False, 'Advanced', 'force high dpi support', bool)
 
 # sizes
@@ -598,6 +598,7 @@ ABOUT =\
 	"""
 <!DOCTYPE html><html><head></head><body>
 <p><strong>Creator</strong>: <a href="https://github.com/Pewpews">Pewpews</a></p>
+<p>Twitter: <a href="https://twitter.com/pewspew">@pewspew</a></p>
 <p>Chat: <a href="https://gitter.im/Pewpews/happypanda">Gitter chat</a></p>
 <p>Email: <code>happypandabugs@gmail.com</code></p>
 <p><strong>Current version</strong>: {}</p>
@@ -605,12 +606,12 @@ ABOUT =\
 <p>License: <a href="https://www.gnu.org/licenses/gpl-2.0.txt"> GENERAL PUBLIC LICENSE, Version 2</a></p>
 <p>Happypanda was created using:</p>
 <ul>
-<li>Python 3.4</li>
+<li>Python 3.5</li>
 <li>The Qt5 Framework</li>
 <li>Various python libraries (see github repo)</li>
 </ul>
 <p>Contributors (github):
-nonamethanks, ImoutoChan, Moshidesu, peaceanpizza, utterbull, LePearlo</p>
+rachmadaniHaryono (big thanks!), nonamethanks, ImoutoChan, Moshidesu, peaceanpizza, utterbull, LePearlo</p>
 
 </body></html>
 	""".format(vs, db_constants.CURRENT_DB_VERSION)

@@ -1171,7 +1171,7 @@ class GalleryMenu(QMenu):
         if self.selected:
             allow_metadata_txt = "Include selected in auto metadata fetch" if self.allow_metadata_exed else "Exclude selected in auto metadata fetch"
         else:
-            allow_metadata_txt = "Include in auto metadata fetch" if self.allow_metadata_exed else "Exclude in auto metadata fetch"
+            allow_metadata_txt = "Include in 'Fetch all metadata'" if self.allow_metadata_exed else "Exclude in 'Fetch all metadata'"
         adv_menu.addAction(allow_metadata_txt, self.allow_metadata_fetch)
 
     def set_rating(self, x):
