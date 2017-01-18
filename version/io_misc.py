@@ -1,4 +1,4 @@
-﻿import logging, os, json, datetime, random, re
+﻿import logging, os, json, datetime, random, re, queue
 
 from watchdog.events import FileSystemEventHandler, DirDeletedEvent
 from watchdog.observers import Observer
@@ -146,9 +146,12 @@ class GalleryDownloaderList(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(3, self.horizontalHeader().ResizeToContents)
         self.horizontalHeader().setSectionResizeMode(4, self.horizontalHeader().ResizeToContents)
 
+        self._finish_checker = QTimer(self)
+        self._finish_checker.timeout.connect(self._gallery_to_model)
+        self._finish_checker.start(2000)
+        self._download_items = {}
         self.fetch_instance = fetch.Fetch()
-        self.fetch_instance.download_items = []
-        self.fetch_instance.FINISHED.connect(self._gallery_to_model)
+        self.fetch_instance._to_queue_container = True
         self.fetch_instance.moveToThread(app_constants.GENERAL_THREAD)
         self.init_fetch_instance.connect(self.fetch_instance.local)
 
@@ -201,18 +204,21 @@ class GalleryDownloaderList(QTableWidget):
 
     def _init_gallery(self, download_item):
         assert isinstance(download_item, GalleryDownloaderItem)
-        app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(download_item.item.file))
-        self.fetch_instance.download_items.append(download_item)
-        self.init_fetch_instance.emit([download_item.item.file])
+        file = download_item.item.file
+        app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(file))
+        self._download_items[file] = download_item
+        self._download_items[utils.move_files(file, only_path=True)] = download_item # better safe than sorry
+        self.init_fetch_instance.emit([file])
 
-    def _gallery_to_model(self, gallery_list):
+    def _gallery_to_model(self):
         log_i("Adding downloaded gallery to library")
         try:
-            d_item = self.fetch_instance.download_items.pop(0)
-        except IndexError:
+            gallery = self.fetch_instance._galleries_queue.get_nowait()
+        except queue.Empty:
             return
-        if gallery_list:
-            gallery = gallery_list[0]
+        
+        try:
+            d_item = self._download_items[gallery.path]
             gallery.link = d_item.item.gallery_url
             if d_item.item.metadata:
                 gallery = pewnet.EHen.apply_metadata(gallery, d_item.item.metadata)
@@ -224,7 +230,7 @@ class GalleryDownloaderList(QTableWidget):
                 self.app_inst.addition_tab.view.add_gallery(gallery, True)
                 d_item.status_item.setText('Added to inbox!')
                 log_i("Added downloaded gallery to inbox")
-        else:
+        except KeyError:
             d_item.status_item.setText('Gallery could not be added!')
             log_i("Could not add downloaded gallery to library")
 
@@ -240,8 +246,8 @@ class GalleryDownloader(QWidget):
     """
     def __init__(self, parent):
         super().__init__(None,
-                   Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowMinMaxButtonsHint)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+                   )#Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowMinMaxButtonsHint)
+        self.setAttribute(Qt.WA_DeleteOnClose, False)
         main_layout = QVBoxLayout(self)
         self.parent_widget = parent
         self.url_inserter = QLineEdit()
@@ -258,9 +264,11 @@ class GalleryDownloader(QWidget):
         url_window_btn = QPushButton('Batch URLs')
         url_window_btn.adjustSize()
         url_window_btn.setFixedWidth(url_window_btn.width())
+        self._urls_queue = []
         def batch_url_win():
             self._batch_url = GalleryDownloaderUrlExtracter()
-            self._batch_url.url_emit.connect(self.add_download_entry)
+            self._batch_url.url_emit.connect(lambda u: self._urls_queue.append(u))
+            self._batch_url.url_emit.connect(lambda u: self.info_lbl.setText("<font color='green'>Adding URLs to queue...</font>") if u else None)
         url_window_btn.clicked.connect(batch_url_win)
         clear_all_btn = QPushButton('Clear List')
         clear_all_btn.adjustSize()
@@ -275,14 +283,20 @@ class GalleryDownloader(QWidget):
         download_list_scroll.setWidgetResizable(True)
         download_list_scroll.setWidget(self.download_list)
         main_layout.addWidget(download_list_scroll, 1)
-        close_button = QPushButton('Close', self)
-        close_button.clicked.connect(self.hide)
-        main_layout.addWidget(close_button)
         self.resize(480,600)
         self.setWindowIcon(QIcon(app_constants.APP_ICO_PATH))
 
-    def add_download_entry(self, url=None):
+        self._url_checker = QTimer(self)
+        self._url_checker.timeout.connect(lambda: self.add_download_entry(extractor=True))
+        self._url_checker.start(500)
+
+    def add_download_entry(self, url=None, extractor=False):
         log_i('Adding download entry: {}'.format(url))
+        if extractor:
+            try:
+                url = self._urls_queue.pop(0)
+            except IndexError:
+                return
         self.info_lbl.hide()
         h_item = None
         try:
@@ -344,6 +358,9 @@ class GalleryDownloader(QWidget):
             self.activateWindow()
         else:
             super().show()
+
+    def closeEvent(self, QCloseEvent):
+        self.hide()
 
 class GalleryPopup(misc.BasePopup):
     """

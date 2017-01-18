@@ -292,7 +292,7 @@ def update_gallery_path(new_path, gallery):
     gallery.path = new_path
     return gallery
 
-def move_files(path, dest=''):
+def move_files(path, dest='', only_path=False):
     """
     Move files to a new destination. If dest is not set,
     imported_galleries_def_path will be used instead.
@@ -303,12 +303,14 @@ def move_files(path, dest=''):
             return path
     f = os.path.split(path)[1]
     new_path = os.path.join(dest, f)
-    log_i("Moving to: {}".format(new_path))
+    if not only_path:
+        log_i("Moving to: {}".format(new_path))
     if new_path == os.path.join(*os.path.split(path)): # need to unpack to make sure we get the corrct sep
         return path
     if not os.path.exists(new_path):
         app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(new_path))
-        new_path = shutil.move(path, new_path)
+        if not only_path:
+            new_path = shutil.move(path, new_path)
     else:
         return path
     return new_path
