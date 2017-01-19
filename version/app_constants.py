@@ -13,9 +13,14 @@
 """Contains constants to be used by several modules"""
 
 import os, sys, enum
-import settings
 import qtawesome as qta
-from database import db_constants
+
+try:
+    import settings
+    from database import db_constants
+except ImportError:
+    from . import settings
+    from .database import db_constants
 
 # Version number
 vs  = '0.31'

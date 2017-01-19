@@ -23,6 +23,58 @@ log_w = log.warning
 log_e = log.error
 log_c = log.critical
 
+def series_ns_sql(cols=False):
+    sql ="CREATE TABLE IF NOT EXISTS series_ns("
+
+    col_list = [
+        'ns_id INTEGER PRIMARY KEY',
+        "ns_title TEXT NOT NULL DEFAULT ''",
+        "ns_profile BLOB",
+        "ns_date TEXT",
+        ]
+
+    for x, s in enumerate(col_list):
+        if x != len(col_list) - 1:
+            sql += s + ','
+    sql += ");"
+    if cols:
+        return sql, col_list
+    return sql
+
+def cirlce_sql(cols=False):
+    sql ="CREATE TABLE IF NOT EXISTS circles("
+
+    col_list = [
+        'circle_id INTEGER PRIMARY KEY',
+        "name TEXT NOT NULL DEFAULT ''",
+        ]
+
+    for x, s in enumerate(col_list):
+        if x != len(col_list) - 1:
+            sql += s + ','
+    sql += ");"
+    if cols:
+        return sql, col_list
+    return sql
+
+def artist_sql(cols=False):
+    sql ="CREATE TABLE IF NOT EXISTS artists("
+
+    col_list = [
+        'artist_id INTEGER PRIMARY KEY',
+        "name TEXT NOT NULL DEFAULT ''",
+        "circle_id INTEGER",
+        "FOREIGN KEY(circle_id) REFERENCES circles(circle_id) ON DELETE CASCADE"
+        ]
+
+    for x, s in enumerate(col_list):
+        if x != len(col_list) - 1:
+            sql += s + ','
+    sql += ");"
+    if cols:
+        return sql, col_list
+    return sql
+
 def hashes_sql(cols=False):
     sql = """
         CREATE TABLE IF NOT EXISTS hashes(
@@ -48,34 +100,12 @@ def hashes_sql(cols=False):
     return sql
 
 def series_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS series(
-                    series_id INTEGER PRIMARY KEY,
-                    title TEXT,
-                    artist TEXT,
-                    profile BLOB,
-                    series_path BLOB,
-                    is_archive INTEGER,
-                    path_in_archive BLOB,
-                    info TEXT,
-                    fav INTEGER,
-                    type TEXT,
-                    link BLOB,
-                    language TEXT,
-                    rating INTEGER NOT NULL DEFAULT 0,
-                    status TEXT,
-                    pub_date TEXT,
-                    date_added TEXT,
-                    last_read TEXT,
-                    times_read INTEGER,
-                    exed INTEGER NOT NULL DEFAULT 0,
-                    db_v REAL,
-                    view INTEGER DEFAULT 1);
-        """
+    sql = "CREATE TABLE IF NOT EXISTS series("
     col_list = [
         'series_id INTEGER PRIMARY KEY',
+        'ns_id INTEGER',
         'title TEXT',
-        'artist TEXT',
+        'artist_id INTEGER',
         'profile BLOB',
         'series_path BLOB',
         'is_archive INTEGER',
@@ -93,8 +123,14 @@ def series_sql(cols=False):
         'times_read INTEGER',
         'exed INTEGER NOT NULL DEFAULT 0',
         'db_v REAL',
-        'view INTEGER DEFAULT 1'
+        'view INTEGER DEFAULT 1',
+        "FOREIGN KEY(artist_id) REFERENCES artists(artist_id)",
+        "FOREIGN KEY(ns_id) REFERENCES series_ns(ns_id)",
         ]
+    for x, s in enumerate(col_list):
+        if x != len(col_list) - 1:
+            sql += s + ','
+    sql += ");"
     if cols:
         return sql, col_list
     return sql
@@ -189,18 +225,7 @@ def series_tags_mappings_sql(cols=False):
     return sql
 
 def list_sql(cols=False):
-    sql ="""
-        CREATE TABLE IF NOT EXISTS list(
-                    list_id INTEGER PRIMARY KEY,
-                    list_name TEXT NOT NULL DEFAULT '',
-                    list_filter TEXT,
-                    profile BLOB,
-                    type INTEGER DEFAULT 0,
-                    enforce INTEGER DEFAULT 0,
-                    regex INTEGER DEFAULT 0,
-                    l_case INTEGER DEFAULT 0,
-                    strict INTEGER DEFAULT 0);
-        """
+    sql ="CREATE TABLE IF NOT EXISTS list("
     col_list = [
         'list_id INTEGER PRIMARY KEY',
         "list_name TEXT NOT NULL DEFAULT ''",
@@ -212,6 +237,10 @@ def list_sql(cols=False):
         "l_case INTEGER DEFAULT 0",
         "strict INTEGER DEFAULT 0",
         ]
+    for x, s in enumerate(col_list):
+        if x != len(col_list) - 1:
+            sql += s + ','
+    sql += ");"
     if cols:
         return sql, col_list
     return sql
@@ -233,7 +262,7 @@ def series_list_map_sql(cols=False):
         return sql, col_list
     return sql
 
-STRUCTURE_SCRIPT = series_sql()+chapters_sql()+namespaces_sql()+tags_sql()+tags_mappings_sql()+\
+STRUCTURE_SCRIPT = series_ns_sql()+cirlce_sql()+artist_sql()+series_sql()+chapters_sql()+namespaces_sql()+tags_sql()+tags_mappings_sql()+\
     series_tags_mappings_sql()+hashes_sql()+list_sql()+series_list_map_sql()
 
 def global_db_convert(conn):
@@ -243,6 +272,9 @@ def global_db_convert(conn):
     """
     log_i('Converting tables')
     c = conn.cursor()
+    series_ns, series_ns_cols = series_ns_sql(True)
+    circle, circle_cols = cirlce_sql(True)
+    artist, artist_cols = artist_sql(True)
     series, series_cols = series_sql(True)
     chapters, chapters_cols = chapters_sql(True)
     namespaces, namespaces_cols = namespaces_sql(True)
@@ -254,6 +286,9 @@ def global_db_convert(conn):
     series_list_map, series_list_map_cols = series_list_map_sql(True)
     
     t_d = {}
+    t_d['series_ns'] = series_ns_cols
+    t_d['circles'] = circle_cols
+    t_d['artists'] = artist_cols
     t_d['series'] = series_cols
     t_d['chapters'] = chapters_cols
     t_d['namespaces'] = namespaces_cols

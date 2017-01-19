@@ -32,9 +32,12 @@ import time
 from PyQt5.QtGui import QImage, qRgba
 from PIL import Image,ImageChops
 
-import app_constants
-
-from database import db_constants
+try:
+    import app_constants
+    from database import db_constants
+except:
+    from . import app_constants
+    from .database import db_constants
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -214,9 +217,10 @@ def backup_database(db_path=db_constants.DB_PATH):
     db_name = "{}-{}".format(date, name)
 
     current_try = 0
+    orig_db_name = db_name
     while current_try < 50:
         if current_try:
-            db_name = "{}({})-{}".format(date, current_try, db_name)
+            db_name = "{}({})-{}".format(date, current_try, orig_db_name)
         try:
             dst_path = os.path.join(backup_dir, db_name)
             if os.path.exists(dst_path):
