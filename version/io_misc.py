@@ -211,12 +211,12 @@ class GalleryDownloaderList(QTableWidget):
         self.init_fetch_instance.emit([file])
 
     def _gallery_to_model(self):
-        log_i("Adding downloaded gallery to library")
         try:
             gallery = self.fetch_instance._galleries_queue.get_nowait()
         except queue.Empty:
             return
         
+        log_i("Adding downloaded gallery to library")
         try:
             d_item = self._download_items[gallery.path]
             gallery.link = d_item.item.gallery_url
@@ -291,13 +291,13 @@ class GalleryDownloader(QWidget):
         self._url_checker.start(500)
 
     def add_download_entry(self, url=None, extractor=False):
-        log_i('Adding download entry: {}'.format(url))
         if extractor:
             try:
                 url = self._urls_queue.pop(0)
             except IndexError:
                 return
         self.info_lbl.hide()
+        log_i('Adding download entry: {}'.format(url))
         h_item = None
         try:
             if not url:
@@ -315,6 +315,10 @@ class GalleryDownloader(QWidget):
             return
         except app_constants.NeedLogin:
             self.info_lbl.setText("<font color='red'>Login is required to download:\n{}</font>".format(url))
+            self.info_lbl.show()
+            return
+        except app_constants.HTMLParsing:
+            self.info_lbl.setText("<font color='red'HTML parsing error:\n{}</font>".format(url))
             self.info_lbl.show()
             return
         except app_constants.WrongLogin:

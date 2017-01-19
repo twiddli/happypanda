@@ -224,10 +224,10 @@ class BaseMoveWidget(QWidget):
 
 class SortMenu(QMenu):
     new_sort = pyqtSignal(str)
-    def __init__(self, app_inst, parent=None):
+    def __init__(self, app_inst, parent=None, toolbutton=None):
         super().__init__(parent)
         self.parent_widget = app_inst
-
+        self.toolbutton = toolbutton
         self.sort_actions = QActionGroup(self, exclusive=True)
         asc_desc_act = QAction("Asc/Desc", self)
         asc_desc_act.triggered.connect(self.asc_desc)
@@ -258,6 +258,11 @@ class SortMenu(QMenu):
 
         self.set_current_sort()
 
+    def set_toolbutton_text(self):
+        act = self.sort_actions.checkedAction()
+        if self.toolbutton:
+            self.toolbutton.setText(act.text())
+
     def set_current_sort(self):
         def check_key(act, key):
             if self.parent_widget.current_manga_view.list_view.current_sort == key:
@@ -281,8 +286,12 @@ class SortMenu(QMenu):
 
     def asc_desc(self):
         if self.parent_widget.current_manga_view.sort_model.sortOrder() == Qt.AscendingOrder:
+            if self.toolbutton:
+                self.toolbutton.setIcon(app_constants.SORT_ICON_DESC)
             self.parent_widget.current_manga_view.sort_model.sort(0, Qt.DescendingOrder)
         else:
+            if self.toolbutton:
+                self.toolbutton.setIcon(app_constants.SORT_ICON_ASC)
             self.parent_widget.current_manga_view.sort_model.sort(0, Qt.AscendingOrder)
 
     def showEvent(self, event):

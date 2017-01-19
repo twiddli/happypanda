@@ -466,7 +466,8 @@ class ArchiveFile():
             return con
         if self.type == self.zip:
             dir_con_start = [x for x in self.namelist() if x.startswith(dir_name)]
-            return [x for x in dir_con_start if x.count('/') == dir_name.count('/') or \
+            return [x for x in dir_con_start if x.count('/') == dir_name.count('/') and \
+                (x.count('/') == dir_name.count('/') and not x.endswith('/')) or \
                 (x.count('/') == 1 + dir_name.count('/') and x.endswith('/'))]
         elif self.type == self.rar:
             return [x for x in self.namelist() if x.startswith(dir_name) and \
@@ -1134,6 +1135,7 @@ def image_greyscale(filepath):
     """
     Check if image is monochrome (1 channel or 3 identical channels)
     """
+    log_d("Checking if img is monochrome: {}".format(filepath))
     im = Image.open(filepath).convert("RGB")
     if im.mode not in ("L", "RGB"):
         return False

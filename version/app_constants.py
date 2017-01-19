@@ -124,7 +124,8 @@ def load_icons():
     global DOWNLOAD_ICON
     global RANDOM_ICON
     global DUPLICATE_ICON
-    global SORT_ICON
+    global SORT_ICON_DESC
+    global SORT_ICON_ASC
     global REFRESH_ICON
 
     G_LISTS_ICON_WH = qta.icon("fa.bars", color="white")
@@ -144,7 +145,8 @@ def load_icons():
     DOWNLOAD_ICON = qta.icon("fa.arrow-circle-o-down", color="white")
     RANDOM_ICON = qta.icon("fa.random", color="white")
     DUPLICATE_ICON = qta.icon("fa.files-o", color="white")
-    SORT_ICON = qta.icon("fa.sort-amount-desc", color="white")
+    SORT_ICON_DESC = qta.icon("fa.sort-amount-desc", color="white")
+    SORT_ICON_ASC = qta.icon("fa.sort-amount-asc", color="white")
     REFRESH_ICON = qta.icon("fa.refresh", color="black")
 
 # image paths
@@ -305,6 +307,7 @@ class FileNotFoundInArchive(Exception): pass
 class WrongURL(Exception): pass
 class NeedLogin(Exception): pass
 class WrongLogin(Exception): pass
+class HTMLParsing(Exception): pass
 
 EXTERNAL_VIEWER_INFO =\
 	"""{$folder} = path to folder
@@ -328,7 +331,7 @@ SUPPORTED_DOWNLOAD_URLS=\
 	"""Supported URLs:
 - exhentai/g.e-hentai gallery urls, e.g.: http://g.e-hentai.org/g/618395/0439fa3666/
 - panda.chaika.moe gallery and archive urls
-	http://panda.chaika.moe/[0]/[1]/ where [0] is 'gallery' or 'archive' and [1] is numbers
+	http://panda.chaika.moe/[0]/[1]/ where [0] is 'gallery' or 'archive' and [1] are numbers
 	"""
 
 SUPPORTED_METADATA_URLS=\

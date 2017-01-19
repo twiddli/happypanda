@@ -188,8 +188,6 @@ class SortFilterModel(QSortFilterProxyModel):
 
     def navigate_history(self, direction=PREV):
         new_term = ''
-        print("History:", self.terms_history)
-        print("Current Position:", self.current_term_history)
         if self.terms_history:
             if direction == self.NEXT:
                 if self.current_term_history < len(self.terms_history) - 1:
@@ -200,7 +198,6 @@ class SortFilterModel(QSortFilterProxyModel):
             new_term = self.terms_history[self.current_term_history]
             if new_term != self.current_term:
                 self.init_search(new_term, history=False)
-        print("New Position:", self.current_term_history)
         return new_term
 
     def set_gallery_list(self, g_list=None):

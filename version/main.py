@@ -43,8 +43,6 @@ def start(test=False):
                                   description='A manga/doujinshi manager with tagging support')
     parser.add_argument('-d', '--debug', action='store_true',
                      help='happypanda_debug_log.log will be created in main directory')
-    parser.add_argument('-t', '--test', action='store_true',
-                     help='Run happypanda in test mode. 5000 gallery will be preadded in DB.')
     parser.add_argument('-v', '--version', action='version',
                      version='Happypanda v{}'.format(app_constants.vs))
     parser.add_argument('-e', '--exceptions', action='store_true',
@@ -125,10 +123,7 @@ def start(test=False):
     log_i('OS: {} {}\n'.format(platform.system(), platform.release()))
     conn = None
     try:
-        if args.test:
-            conn = db.init_db(True)
-        else:
-            conn = db.init_db()
+        conn = db.init_db()
         log_d('Init DB Conn: OK')
         log_i("DB Version: {}".format(db_constants.REAL_DB_VERSION))
     except:

@@ -636,18 +636,20 @@ class AppWindow(QMainWindow):
 
         sort_k = QKeySequence('Alt+S')
 
-        def set_new_sort(s):
-            print(s)
-            self.current_manga_view.list_view.sort(s)
-
         sort_action = QToolButton()
+        sort_action.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         sort_action.setShortcut(sort_k)
-        sort_action.setIcon(app_constants.SORT_ICON)
-        sort_menu = misc.SortMenu(self, self.toolbar)
-        sort_menu.new_sort.connect(set_new_sort)
+        sort_action.setIcon(app_constants.SORT_ICON_DESC)
+        sort_menu = misc.SortMenu(self, self.toolbar, sort_action)
+        sort_menu.set_toolbutton_text()
         sort_action.setMenu(sort_menu)
         sort_action.setPopupMode(QToolButton.InstantPopup)
         self.toolbar.addWidget(sort_action)
+
+        def set_new_sort(s):
+            sort_menu.set_toolbutton_text()
+            self.current_manga_view.list_view.sort(s)
+        sort_menu.new_sort.connect(set_new_sort)
 
         spacer_tool4 = QWidget() 
         spacer_tool4.setFixedSize(QSize(5, 1))
