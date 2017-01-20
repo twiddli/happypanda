@@ -967,7 +967,6 @@ class GridDelegate(QStyledItemDelegate):
                     star_rating.paint(painter,
                         QRect(star_start_x, type_rect.y(), star_width, type_rect.height()))
 
-
             if gallery.state == app_constants.GalleryState.New:
                 painter.save()
                 painter.setPen(Qt.NoPen)
@@ -1270,8 +1269,9 @@ class MangaView(QListView):
             self.gallery_model.CUSTOM_STATUS_MSG.emit("Unfavorited")
         else:
             gallery.fav = 1
+            gallery.rating = 5
             #self.model().replaceRows([gallery], index.row(), 1, index)
-            gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, gallery.id, {'fav':1})
+            gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, gallery.id, {'fav':1, 'rating':5})
             self.gallery_model.CUSTOM_STATUS_MSG.emit("Favorited")
 
     def del_chapter(self, index, chap_numb):

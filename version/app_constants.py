@@ -256,8 +256,8 @@ class GalleryState(enum.Enum):
 	New = 2
 
 # Colors
-GRID_VIEW_TITLE_COLOR = get('#f2f2f2', 'Visual', 'grid view title color', str)
-GRID_VIEW_ARTIST_COLOR = get('#FFFFFF', 'Visual', 'grid view artist color', str)
+GRID_VIEW_TITLE_COLOR = get('#ffffff', 'Visual', 'grid view title color', str)
+GRID_VIEW_ARTIST_COLOR = get('#e2e2e2', 'Visual', 'grid view artist color', str)
 GRID_VIEW_LABEL_COLOR = get('#d64933', 'Visual', 'grid view label color', str)
 
 GRID_VIEW_T_MANGA_COLOR = get('#3498db', 'Visual', 'grid view t manga color', str)
