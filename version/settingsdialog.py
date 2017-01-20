@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QListWidget, QWidget,
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QPalette, QPixmapCache
 
+from color_line_edit import ColorLineEdit
 from misc import FlowLayout, Spacer, PathLineEdit, AppDialog, Line
 import misc
 import settings
@@ -1033,35 +1034,49 @@ class SettingsDialog(QWidget):
 			l.setPlaceholderText('Hex colors. Eg.: #323232')
 			l.setMaximumWidth(200)
 			return l
-		self.grid_label_color = color_lineedit()
-		self.grid_title_color = color_lineedit()
-		self.grid_artist_color = color_lineedit()
-		grid_colors_l.addRow('Label color:', self.grid_label_color)
-		grid_colors_l.addRow('Title color:', self.grid_title_color)
-		grid_colors_l.addRow('Artist color:', self.grid_artist_color)
+
+		self.grid_label_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			hex_color=app_constants.GRID_VIEW_LABEL_COLOR)
+		grid_colors_l.addRow('Label color:', hbox_layout)
+		self.grid_title_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			hex_color=app_constants.GRID_VIEW_TITLE_COLOR)
+		grid_colors_l.addRow('Title color:', hbox_layout)
+		self.grid_artist_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			hex_color=app_constants.GRID_VIEW_ARTIST_COLOR)
+		grid_colors_l.addRow('Artist color:', hbox_layout)
 
 		# grid view / colors / ribbon
 		self.colors_ribbon_group, colors_ribbon_l = groupbox('Ribbon', QFormLayout, grid_colors_group)
 		self.colors_ribbon_group.setCheckable(True)
 		grid_colors_l.addRow(self.colors_ribbon_group)
-		self.ribbon_manga_color = color_lineedit()
-		self.ribbon_doujin_color = color_lineedit()
-		self.ribbon_artist_cg_color = color_lineedit()
-		self.ribbon_game_cg_color = color_lineedit()
-		self.ribbon_western_color = color_lineedit()
-		self.ribbon_image_color = color_lineedit()
-		self.ribbon_non_h_color = color_lineedit()
-		self.ribbon_cosplay_color = color_lineedit()
-		self.ribbon_other_color = color_lineedit()
-		colors_ribbon_l.addRow('Manga', self.ribbon_manga_color)
-		colors_ribbon_l.addRow('Doujinshi', self.ribbon_doujin_color)
-		colors_ribbon_l.addRow('Artist CG', self.ribbon_artist_cg_color)
-		colors_ribbon_l.addRow('Game CG', self.ribbon_game_cg_color)
-		colors_ribbon_l.addRow('Western', self.ribbon_western_color)
-		colors_ribbon_l.addRow('Image', self.ribbon_image_color)
-		colors_ribbon_l.addRow('Non-H', self.ribbon_non_h_color)
-		colors_ribbon_l.addRow('Cosplay', self.ribbon_cosplay_color)
-		colors_ribbon_l.addRow('Other', self.ribbon_other_color)
+
+		self.ribbon_manga_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			 app_constants.GRID_VIEW_T_MANGA_COLOR)
+		colors_ribbon_l.addRow('Manga', hbox_layout)
+		self.ribbon_doujin_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_DOUJIN_COLOR)
+		colors_ribbon_l.addRow('Doujinshi', hbox_layout)
+		self.ribbon_artist_cg_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+		 	app_constants.GRID_VIEW_T_ARTIST_CG_COLOR)
+		colors_ribbon_l.addRow('Artist CG', hbox_layout)
+		self.ribbon_game_cg_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_GAME_CG_COLOR)
+		colors_ribbon_l.addRow('Game CG', hbox_layout)
+		self.ribbon_western_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_WESTERN_COLOR)
+		colors_ribbon_l.addRow('Western', hbox_layout)
+		self.ribbon_image_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_IMAGE_COLOR)
+		colors_ribbon_l.addRow('Image', hbox_layout)
+		self.ribbon_non_h_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_NON_H_COLOR)
+		colors_ribbon_l.addRow('Non-H', hbox_layout)
+		self.ribbon_cosplay_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_COSPLAY_COLOR)
+		colors_ribbon_l.addRow('Cosplay', hbox_layout)
+		self.ribbon_other_color, hbox_layout = self._get_color_line_edit_and_hbox_layout(
+			app_constants.GRID_VIEW_T_OTHER_COLOR)
+		colors_ribbon_l.addRow('Other', hbox_layout)
 
 		# Style
 		style_page = QWidget(self)
@@ -1300,6 +1315,15 @@ class SettingsDialog(QWidget):
 		k_short_info = QLabel(app_constants.KEYBOARD_SHORTCUTS_INFO)
 		k_short_info.setWordWrap(True)
 		about_k_shortcuts_l.addRow(k_short_info)
+
+	@staticmethod
+	def _get_color_line_edit_and_hbox_layout(hex_color=None):
+		"""get ColorLineEdit and hbox layout."""
+		color_line_edit = ColorLineEdit(hex_color=hex_color)
+		hbox_layout = QHBoxLayout()
+		hbox_layout.addWidget(color_line_edit)
+		hbox_layout.addWidget(color_line_edit.button)
+		return color_line_edit, hbox_layout
 
 	def add_folder_monitor(self, path=''):
 		if not isinstance(path, str):
