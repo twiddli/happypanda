@@ -967,6 +967,7 @@ class GridDelegate(QStyledItemDelegate):
                     star_rating.paint(painter,
                         QRect(star_start_x, type_rect.y(), star_width, type_rect.height()))
 
+
             if gallery.state == app_constants.GalleryState.New:
                 painter.save()
                 painter.setPen(Qt.NoPen)

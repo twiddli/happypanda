@@ -244,3 +244,4 @@ FakesAssemblies/
 /happypanda.VC.VC.opendb
 /.vs/config/applicationhost.config
 /data/happypanda.db
+/main.spec
