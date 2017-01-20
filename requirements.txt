@@ -7,4 +7,4 @@ robobrowser
 Send2Trash
 pillow
 python-dateutil
-qtawesome
+QtAwesome==0.3.3
