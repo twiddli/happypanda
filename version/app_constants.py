@@ -231,6 +231,7 @@ POPUP_WIDTH = get(500, 'Visual', 'popup.w', int)
 POPUP_HEIGHT = get(300, 'Visual', 'popup.h', int)
 
 # Gallery
+APPEND_TAGS_GALLERIES = get(True, 'Application', 'append tags to gallery', bool)
 KEEP_ADDED_GALLERIES = get(True, 'Application', 'keep added galleries', bool)
 GALLERY_METAFILE_KEYWORDS = ('info.json', 'info.txt')
 CURRENT_SORT = get('title', 'General', 'current sort')

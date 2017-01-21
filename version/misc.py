@@ -1398,7 +1398,10 @@ class BasePopup(TransparentWidget):
         blur = True
         if kwargs:
             blur = kwargs.pop('blur', True)
-            super().__init__(parent, **kwargs)
+            if kwargs:
+                super().__init__(parent, **kwargs)
+            else:
+                super().__init__(parent, flags= Qt.Dialog | Qt.FramelessWindowHint)
         else:
             super().__init__(parent, flags= Qt.Dialog | Qt.FramelessWindowHint)
         main_layout = QVBoxLayout()

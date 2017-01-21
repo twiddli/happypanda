@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem, QWidget,
                              QListWidget, QHBoxLayout, QPushButton, QStackedLayout,
                              QFrame, QSizePolicy, QListView, QFormLayout, QLineEdit,
                              QLabel, QStyledItemDelegate, QStyleOptionViewItem,
-                             QCheckBox, QButtonGroup)
+                             QCheckBox, QButtonGroup, QPlainTextEdit)
 from PyQt5.QtCore import (Qt, QTimer, pyqtSignal, QRect, QSize, QEasingCurve,
                           QSortFilterProxyModel, QIdentityProxyModel, QModelIndex,
                           QPointF, QRectF, QObject)
@@ -289,12 +289,13 @@ class TagsTreeView(QTreeWidget):
 
 class GalleryListEdit(misc.BasePopup):
     apply = pyqtSignal()
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent, blur=False)
         main_layout = QFormLayout(self.main_widget)
         self.name_edit = QLineEdit(self)
         main_layout.addRow("Name:", self.name_edit)
-        self.filter_edit = QLineEdit(self)
+        self.filter_edit = QPlainTextEdit(self)
+        self.filter_edit.setFixedHeight(100)
         what_is_filter = misc.ClickedLabel("What is filter/enforce? (Hover)")
         what_is_filter.setToolTip(app_constants.WHAT_IS_FILTER)
         what_is_filter.setToolTipDuration(9999999999)
@@ -311,6 +312,9 @@ class GalleryListEdit(misc.BasePopup):
         main_layout.addRow(self.buttons_layout)
         self.add_buttons("Close")[0].clicked.connect(self.hide)
         self.add_buttons("Apply")[0].clicked.connect(self.accept)
+        old_v = self.width()
+        self.adjustSize()
+        self.resize(old_v, self.height())
 
     def set_list(self, gallery_list, item):
         self.gallery_list = gallery_list
@@ -321,17 +325,15 @@ class GalleryListEdit(misc.BasePopup):
         self.strict.setChecked(gallery_list.strict)
         self.item = item
         if gallery_list.filter:
-            self.filter_edit.setText(gallery_list.filter)
+            self.filter_edit.setPlainText(gallery_list.filter)
         else:
-            self.filter_edit.setText('')
-        self.adjustSize()
-        self.setFixedWidth(self.parent_widget.width())
+            self.filter_edit.setPlainText('')
 
     def accept(self):
         name = self.name_edit.text()
         self.item.setText(name)
         self.gallery_list.name = name
-        self.gallery_list.filter = self.filter_edit.text()
+        self.gallery_list.filter = self.filter_edit.toPlainText()
         self.gallery_list.enforce = self.enforce.isChecked()
         self.gallery_list.regex = self.regex.isChecked()
         self.gallery_list.case = self.case.isChecked()
@@ -341,9 +343,9 @@ class GalleryListEdit(misc.BasePopup):
         self.hide()
 
 class GalleryListContextMenu(QMenu):
-    def __init__(self, item, parent):
-        super().__init__(parent)
-        self.parent_widget = parent
+    def __init__(self, item, sidebar):
+        super().__init__(sidebar)
+        self.sidebar_widget = sidebar
         self.item = item
         self.gallery_list = item.item
         edit = self.addAction("Edit", self.edit_list)
@@ -351,17 +353,17 @@ class GalleryListContextMenu(QMenu):
         remove = self.addAction("Delete", self.remove_list)
 
     def edit_list(self):
-        self.parent_widget.gallery_list_edit.set_list(self.gallery_list, self.item)
-        self.parent_widget.gallery_list_edit.show()
+        self.sidebar_widget.gallery_list_edit.set_list(self.gallery_list, self.item)
+        self.sidebar_widget.gallery_list_edit.show()
 
     def remove_list(self):
-        self.parent_widget.takeItem(self.parent_widget.row(self.item))
+        self.sidebar_widget.takeItem(self.sidebar_widget.row(self.item))
         gallerydb.execute(gallerydb.ListDB.remove_list, True, self.gallery_list)
-        self.parent_widget.GALLERY_LIST_REMOVED.emit()
+        self.sidebar_widget.GALLERY_LIST_REMOVED.emit()
 
     def clear_list(self):
         self.gallery_list.clear()
-        self.parent_widget.GALLERY_LIST_CLICKED.emit(self.gallery_list)
+        self.sidebar_widget.GALLERY_LIST_CLICKED.emit(self.gallery_list)
 
 class GalleryLists(QListWidget):
     CREATE_LIST_TYPE = misc.CustomListItem.UserType + 1
@@ -369,7 +371,7 @@ class GalleryLists(QListWidget):
     GALLERY_LIST_REMOVED = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
-        self.gallery_list_edit = GalleryListEdit(parent)
+        self.gallery_list_edit = GalleryListEdit(parent.parent_widget)
         self.gallery_list_edit.hide()
         self._g_list_icon = app_constants.G_LISTS_ICON
         self._font_selected = QFont(self.font())
@@ -405,9 +407,9 @@ class GalleryLists(QListWidget):
 
         g_list_item = self.itemAt(event.pos())
         if galleries and g_list_item:
-            txt = "galleries" if len(galleries) > 1 else "gallery"
-            app_constants.NOTIF_BUBBLE.update_text(g_list_item.item.name, 'Added {} to list...'.format(txt), 5)
-            log_i('Adding gallery to list')
+            txt = "{} galleries".format(len(galleries)) if len(galleries) > 1 else galleries[0].title
+            app_constants.NOTIF_BUBBLE.update_text(g_list_item.item.name, 'Added: {}!'.format(txt), 7)
+            log_i('Added {} to {}...'.format(txt, g_list_item.item.name))
             g_list_item.item.add_gallery(galleries)
 
         super().dropEvent(event)

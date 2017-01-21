@@ -1731,7 +1731,7 @@ class Gallery:
                 if ns:
                     key_word = ['none', 'null']
                     if ns == 'Tag' and tag in key_word:
-                        if not self.tags:
+                        if not self.tags or len(self.tags) == 1 and 'default' in self.tags and not self.tags['default']:
                             return is_exclude
                     elif ns == 'Artist' and tag in key_word:
                         if not self.artist:
