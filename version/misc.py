@@ -1227,6 +1227,8 @@ class GalleryMenu(QMenu):
         for g in galleries:
             gallerydb.execute(gallerydb.GalleryDB.modify_gallery,
                                 True, g.id, view=g.view)
+        self.view.sort_model.refresh()
+        self.view.clearSelection()
 
     def allow_metadata_fetch(self):
         exed = 0 if self.allow_metadata_exed else 1
