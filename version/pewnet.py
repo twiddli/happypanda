@@ -334,7 +334,7 @@ class Downloader(QObject):
                 item, interrupt_state = self._download_single_file(
                     target_file=target_file, response=r, item=item,
                     interrupt_state=interrupt_state, use_tempfile=True,
-                    catch_errors=[ConnectionError]
+                    catch_errors=[requests.ConnectionError]
 
                 )
 
