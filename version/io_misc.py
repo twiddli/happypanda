@@ -20,6 +20,7 @@ import utils
 import pewnet
 import settings
 import fetch
+from asm_manager import AsmManager
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -352,6 +353,8 @@ class GalleryDownloader(QWidget):
                 raise app_constants.NeedLogin()
         elif regex_validate("(panda\.chaika\.moe\/(archive|gallery)\/[0-9]+)"):
             manager = pewnet.ChaikaManager()
+        elif regex_validate("(asmhentai\.com\/g\/[0-9]+)"):
+            manager = AsmManager()
         else:
             raise app_constants.WrongURL
 
