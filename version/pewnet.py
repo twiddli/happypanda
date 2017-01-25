@@ -110,6 +110,24 @@ class Downloader(QObject):
             item = item['item']
         return item, temp_base
 
+    def _get_filename(self, item, temp_base=None):
+        """get filename based on input.
+
+        Args:
+            item: Download item
+            temp_base: Optional temporary folder
+
+        Returns:
+            str: Edited filename
+        """
+        file_name = item.name if item.name else str(uuid.uuid4())
+        invalid_chars = '\\/:*?"<>|'
+        for x in invalid_chars:
+            file_name = file_name.replace(x, '')
+        file_name = os.path.join(self.base, file_name) if not temp_base else \
+            os.path.join(temp_base, file_name)
+        return file_name
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
@@ -119,14 +137,8 @@ class Downloader(QObject):
 
             log_d("Stating item download")
             item.current_state = item.DOWNLOADING
-            file_name = item.name if item.name else str(uuid.uuid4())
 
-            invalid_chars = '\\/:*?"<>|'
-            for x in invalid_chars:
-                file_name = file_name.replace(x, '')
-
-            file_name = os.path.join(self.base, file_name) if not temp_base else \
-                os.path.join(temp_base, file_name)
+            file_name = self._get_filename(item=item, temp_base=temp_base)
             file_name_part = file_name + '.part'
 
             download_url = item.download_url
