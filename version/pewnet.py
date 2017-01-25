@@ -243,6 +243,40 @@ class Downloader(QObject):
 
         return item, interrupt_state
 
+    @staticmethod
+    def _rename_file(filename, filename_part, max_loop=100):
+        """Custom rename file method.
+
+        Args:
+            filename: Target filename.
+            filename_part: Temporary filename
+            max_loop (int): Maximal loop  on error when renaming the file.
+
+        Returns:
+            str: Filename or filename_part
+        """
+        # compatibility
+        file_name = filename
+        file_name_part = filename_part
+
+        n = 0
+        file_split = os.path.split(file_name)
+        while n < max_loop:
+            try:
+                if file_split[1]:
+                    src_file = file_split[0]
+                    target_file = "({}){}".format(n, file_split[1])
+                else:
+                    src_file = file_name_part
+                    target_file = "({}){}".format(n, file_name)
+                os.rename(src_file, target_file)
+                break
+            except:
+                n += 1
+        if n > max_loop:
+            file_name = file_name_part
+        return file_name
+
     def _download_item_with_single_dl_url(self, item, filename, interrupt_state):
         """download item with single download url.
         Args:
