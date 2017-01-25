@@ -2,16 +2,12 @@
 import logging
 from pprint import pformat
 
-try:  # pragma: no cover
-    from app_constants import DOWNLOAD_TYPE_OTHER, VALID_GALLERY_CATEGORY
-    from dl_manager_obj import DLManagerObject
-    from downloader_obj import DownloaderObject
-    from hen_item import HenItem
-except ImportError:
-    from .app_constants import DOWNLOAD_TYPE_OTHER, VALID_GALLERY_CATEGORY
-    from .dl_manager_obj import DLManagerObject
-    from .downloader_obj import DownloaderObject
-    from .hen_item import HenItem
+from app_constants import DOWNLOAD_TYPE_OTHER, VALID_GALLERY_CATEGORY
+from pewnet import (
+    DLManager as DLManagerObject,
+    Downloader as DownloaderObject,
+    HenItem,
+)
 
 log = logging.getLogger(__name__)
 """:class:`logging.Logger`: Logger for module."""
