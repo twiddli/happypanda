@@ -153,6 +153,62 @@ class Downloader(QObject):
 
         return item, interrupt_state
 
+    @staticmethod
+    def _download_single_file(
+            target_file, response, item, interrupt_state,
+            use_tempfile=False, catch_errors=None
+    ):
+        """Download single file from url response and return changed item and interrupt state.
+        Note:
+            item's current size may not give exact size.
+            especially when there is multiple interupt and tempfile is used.
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+            use_tempfile (bool): Use tempfile when downloading or not.
+            catch_errors (list): List of error that will be catched when downloading.
+
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        #compatibilty
+        DownloaderObject = Downloader
+
+        if catch_errors:
+            item, interrupt_state = DownloaderObject._download_with_catch_error(
+                target_file=target_file,
+                response=response,
+                item=item,
+                interrupt_state=interrupt_state,
+                use_tempfile=use_tempfile,
+                catch_errors=catch_errors
+
+            )
+        elif use_tempfile:
+            with NamedTemporaryFile() as tempfile:
+                item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=tempfile.name,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=False
+                )
+                if item.current_state != item.CANCELLED:
+                    shutil.copyfile(tempfile.name, target_file)
+        else:
+            item, interrupt_state = DownloaderObject._download_with_simple_method(
+                target_file=target_file,
+                response=response,
+                item=item,
+                interrupt_state=interrupt_state,
+            )
+
+        return item, interrupt_state
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
