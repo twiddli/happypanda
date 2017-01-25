@@ -219,6 +219,47 @@ class Downloader(QObject):
 
         return item, interrupt_state
 
+    def _download_item_with_single_dl_url(self, item, filename, interrupt_state):
+        """download item with single download url.
+        Args:
+            item: Item with single download url.
+            filename (str): Filename for downloaded file.
+            interrupt_state (bool): Interrupt state
+        Returns:
+            Modified item
+        """
+        # compatibility
+        file_name = filename
+        interrupt = interrupt_state
+        download_url = item.download_url
+        file_name_part = file_name + '.part'
+
+        # response
+        r = self._get_response(url=download_url)
+        # get total size
+        item.total_size = self._get_total_size(response=r)
+
+        # downloading to temp file (file_name_part)
+        item, interrupt = self._download_single_file(
+            target_file=file_name_part, response=r, item=item, interrupt_state=interrupt)
+
+        if not interrupt:
+            # post operation when no interrupt
+            try:
+                os.rename(file_name_part, file_name)
+            except OSError:
+                file_name = self._rename_file(
+                    filename=file_name, filename_part=file_name_part)
+
+            item.file = file_name
+            item.current_state = item.FINISHED
+            # emit
+            item.file_rdy.emit(item)
+            self.item_finished.emit(item)
+        else:
+            self.remove_file(filename=file_name_part)
+        return item
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
