@@ -290,6 +290,23 @@ class Downloader(QObject):
             file_name = file_name_part
         return file_name
 
+    @staticmethod
+    def _get_total_size_prediction(known_filesize, urls_len):
+        """get total size prediction.
+
+        Args:
+            known_filesize (list): List of known filesize.
+            urls_len (int): Number of urls_len
+
+        Returns:
+            int: Total size predictions.
+        """
+        if not known_filesize:  # empty list
+            return 0
+        if len(known_filesize) == urls_len:
+            return int(sum(known_filesize))
+        return int(sum(known_filesize) * urls_len / len(known_filesize))
+
     def _download_item_with_multiple_dl_url(self, item, folder, interrupt_state):
         """download item with multiple download url.
 
