@@ -108,6 +108,18 @@ class Downloader(QObject):
         return item
 
     @staticmethod
+    def remove_file(filename):
+        """Remove file and ignore any error when doing it.
+
+        Args:
+            filename: filename to be removed.
+        """
+        try:
+            os.remove(filename)
+        except:
+            pass
+
+    @staticmethod
     def _get_total_size(response):
         """get total size from requests response.
         Args:
