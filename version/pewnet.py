@@ -398,7 +398,6 @@ class Downloader(QObject):
             item.current_state = item.DOWNLOADING
 
             file_name = self._get_filename(item=item, temp_base=temp_base)
-            file_name_part = file_name + '.part'
 
             download_url = item.download_url
             log_d("Download url:{}".format(download_url))
