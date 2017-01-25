@@ -220,6 +220,9 @@ class Downloader(QObject):
             tuple: (item, interrupt_state) where both variables
                 is the changed variables from input.
         """
+        # compatibility
+        DownloaderObject = Downloader
+
         download_finished = False
         while not download_finished:
             try:
