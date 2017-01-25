@@ -18,14 +18,16 @@ import os
 import random
 import re as regex
 import requests
+import shutil
 import threading
 import time
 import uuid
+from datetime import datetime
+from queue import Queue
+from tempfile import NamedTemporaryFile
 
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
-from datetime import datetime
-from queue import Queue
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
