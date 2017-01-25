@@ -97,16 +97,25 @@ class Downloader(QObject):
 
         return item
 
+    def _get_item_and_temp_base(self):
+        """get item and temporary folder if specified.
+
+        Returns:
+            tuple: (item, temp_base), where temp_base is the temporary folder.
+        """
+        item = self._inc_queue.get()
+        temp_base = None
+        if isinstance(item, dict):
+            temp_base = item['dir']
+            item = item['item']
+        return item, temp_base
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
             log_d("Download items in queue: {}".format(self._inc_queue.qsize()))
             interrupt = False
-            item = self._inc_queue.get()
-            temp_base = None
-            if isinstance(item, dict):
-                temp_base = item['dir']
-                item = item['item']
+            item, temp_base = self._get_item_and_temp_base()
 
             log_d("Stating item download")
             item.current_state = item.DOWNLOADING
