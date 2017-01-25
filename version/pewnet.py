@@ -34,6 +34,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import app_constants
 import utils
 import settings
+from utils import makedirs_if_not_exists
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -288,6 +289,62 @@ class Downloader(QObject):
         if n > max_loop:
             file_name = file_name_part
         return file_name
+
+    def _download_item_with_multiple_dl_url(self, item, folder, interrupt_state):
+        """download item with multiple download url.
+
+        This method is modified from _download_item_with_single_dl_url method.
+
+        Important changes::
+        - Create new folder for download.
+        - Method to calculate total size
+        - item.file is now folder name instead of filename
+
+        Args:
+            item: Item with single download url.
+            folder (str): Folder for downloaded file.
+            interrupt_state (bool): Interrupt state
+
+        Returns:
+            Modified item
+        """
+        download_url = item.download_url
+        total_known_filesize = []
+        download_url_len = len(download_url)
+
+        makedirs_if_not_exists(folder)
+        for single_url in download_url:
+            # response
+            r = self._get_response(url=single_url)
+
+            # get total size
+            current_response_filesize = self._get_total_size(response=r)
+            total_known_filesize.append(current_response_filesize)
+            item.total_size = self._get_total_size_prediction(
+                known_filesize=total_known_filesize, urls_len=download_url_len)
+
+            url_basename = os.path.basename(single_url)
+            target_file = os.path.join(folder, url_basename)
+            target_filesize = self._get_local_filesize(path=target_file)
+            if target_filesize == current_response_filesize and target_filesize != 0:
+                item.current_size += current_response_filesize
+                log_d('File is already downloaded.\n{}'.format(target_file))
+            else:
+                # downloading to temp file (file_name_part)
+                item, interrupt_state = self._download_single_file(
+                    target_file=target_file, response=r, item=item,
+                    interrupt_state=interrupt_state, use_tempfile=True,
+                    catch_errors=[ConnectionError]
+
+                )
+
+        if not interrupt_state:
+            item.current_state = item.FINISHED
+            item.file = folder
+            # emit
+            item.file_rdy.emit(item)
+            self.item_finished.emit(item)
+        return item
 
     def _download_item_with_single_dl_url(self, item, filename, interrupt_state):
         """download item with single download url.
