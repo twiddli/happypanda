@@ -204,12 +204,31 @@ class GalleryDownloaderList(QTableWidget):
             event.ignore()
 
     def _init_gallery(self, download_item):
+        """Init gallery.
+
+        Args:
+            download_item(:class:`.gallery_downloader_item_obj.GalleryDownloaderItemObject`):
+            Downloaded item.
+        """
+        if not hasattr(download_item, 'download_type'):
+            log_w("Download item don't have dont have download type.")
+            return
+        if download_item.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
+            return
+        # NOTE: try to use ehen's apply_metadata first
+        # manager have to edit item.metadata to match this method
         assert isinstance(download_item, GalleryDownloaderItem)
-        file = download_item.item.file
-        app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(file))
-        self._download_items[file] = download_item
-        self._download_items[utils.move_files(file, only_path=True)] = download_item # better safe than sorry
-        self.init_fetch_instance.emit([file])
+        if download_item.download_type == app_constants.DOWNLOAD_TYPE_ARCHIVE:
+            file = download_item.item.file
+            app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(file))
+            self._download_items[file] = download_item
+            self._download_items[utils.move_files(file, only_path=True)] = download_item  # better safe than sorry
+            self.init_fetch_instance.emit([file])
+        elif download_item.download_type == app_constants.DOWNLOAD_TYPE_OTHER:
+            app_constants.TEMP_PATH_IGNORE.append(
+                os.path.normcase(download_item.item.file))
+            self.fetch_instance.download_items.append(download_item)
+            self.init_fetch_instance.emit([download_item.item.file])
 
     def _gallery_to_model(self):
         try:
