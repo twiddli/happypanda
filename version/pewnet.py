@@ -308,6 +308,21 @@ class Downloader(QObject):
             return int(sum(known_filesize))
         return int(sum(known_filesize) * urls_len / len(known_filesize))
 
+    @staticmethod
+    def _get_local_filesize(path):
+        """Get local filesize.
+
+        Args:
+            path: Path of the file.
+
+        Returns:
+            filesize of the file or zero.
+        """
+        try:
+            return os.path.getsize(path)
+        except OSError:
+            return 0
+
     def _download_item_with_multiple_dl_url(self, item, folder, interrupt_state):
         """download item with multiple download url.
 
