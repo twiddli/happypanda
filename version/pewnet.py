@@ -128,6 +128,31 @@ class Downloader(QObject):
             os.path.join(temp_base, file_name)
         return file_name
 
+    @staticmethod
+    def _download_with_simple_method(target_file, response, item, interrupt_state):
+        """download single file with simple method.
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        chunk_size = 1024
+        with open(target_file, 'wb') as f:
+            for data in response.iter_content(chunk_size=chunk_size):
+                if item.current_state == item.CANCELLED:
+                    interrupt_state = True
+                    break
+                if data:
+                    item.current_size += len(data)
+                    f.write(data)
+                    f.flush()
+
+        return item, interrupt_state
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
