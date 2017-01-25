@@ -202,6 +202,41 @@ class Downloader(QObject):
         return item, interrupt_state
 
     @staticmethod
+    def _download_with_catch_error(
+            target_file, response, item, interrupt_state,
+            use_tempfile=False, catch_errors=None
+    ):
+        """Download single file from url response and return changed item and interrupt state.
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+            use_tempfile (bool): Use tempfile when downloading or not.
+            catch_errors (list): List of error that will be catched when downloading.
+
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        download_finished = False
+        while not download_finished:
+            try:
+                item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=target_file,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=use_tempfile
+                )
+                download_finished = True
+            except catch_errors as err:
+                log_d('Redownloading because following error.\n{}'.format(err))
+
+        return item, interrupt_state
+
+    @staticmethod
     def _download_single_file(
             target_file, response, item, interrupt_state,
             use_tempfile=False, catch_errors=None
