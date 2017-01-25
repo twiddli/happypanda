@@ -28,6 +28,7 @@ from tempfile import NamedTemporaryFile
 
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
+from robobrowser.exceptions import RoboError
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -550,6 +551,22 @@ class DLManager(QObject):
         EH API: http://ehwiki.org/wiki/API
         """
         raise NotImplementedError
+
+    def ensure_browser_on_url(self, url):
+        """open browser on input url if not already.
+
+        Args:
+            url: Url where browser to open (or alreadery opened)
+        """
+        open_url = False  # assume not opening the url
+        try:
+            current_url = self._browser.url
+            if current_url != url:
+                open_url = True
+        except RoboError:
+            open_url = True
+        if open_url:
+            self._browser.open(url)
 
 class ChaikaManager(DLManager):
     "panda.chaika.moe manager"
