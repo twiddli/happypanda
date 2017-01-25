@@ -107,6 +107,17 @@ class Downloader(QObject):
 
         return item
 
+    @staticmethod
+    def _get_total_size(response):
+        """get total size from requests response.
+        Args:
+            response (requests.Response): Response from request.
+        """
+        try:
+            return int(response.headers['content-length'])
+        except KeyError:
+            return 0
+
     def _get_response(self, url):
         """get response from url.
         Args:
