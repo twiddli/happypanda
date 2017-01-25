@@ -12,8 +12,16 @@
 #along with Happypanda.  If not, see <http://www.gnu.org/licenses/>.
 #"""
 
-import requests, logging, random, time, threading, html, uuid, os
+import html
+import logging
+import os
+import random
 import re as regex
+import requests
+import threading
+import time
+import uuid
+
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
 from datetime import datetime
