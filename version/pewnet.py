@@ -107,6 +107,19 @@ class Downloader(QObject):
 
         return item
 
+    def _get_response(self, url):
+        """get response from url.
+        Args:
+            url : Url of the response
+        Returns:
+            requests.Response: Response from url
+        """
+        if self._browser_session:
+            r = self._browser_session.get(url, stream=True)
+        else:
+            r = requests.get(url, stream=True)
+        return r
+
     def _get_item_and_temp_base(self):
         """get item and temporary folder if specified.
 
