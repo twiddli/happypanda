@@ -50,6 +50,25 @@ else:
 # path to unrar tool binary
 unrar_tool_path = get('', 'Application', 'unrar tool path')
 
+# type of download needed by download manager for each site parser
+# NOTE define here if any new type will be supported in the future.
+DOWNLOAD_TYPE_ARCHIVE = 0
+DOWNLOAD_TYPE_TORRENT = 1
+DOWNLOAD_TYPE_OTHER = 2
+
+VALID_GALLERY_CATEGORY = (
+    'Doujinshi',
+    'Manga',
+    'Artist CG',
+    'Game CG',
+    'Western',
+    'Non-H',
+    'Image Set',
+    'Cosplay',
+    'Miscellaneous',
+    'Private'
+)
+
 #default stylesheet path
 default_stylesheet_path = os.path.join(static_dir,"style.css")
 user_stylesheet_path = ""
