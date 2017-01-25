@@ -348,52 +348,14 @@ class Downloader(QObject):
 
             self.active_items.append(item)
 
-            if self._browser_session:
-                r = self._browser_session.get(download_url, stream=True)
+            if isinstance(item.download_url, list):
+                # NOTE: file_name will be used as folder name when multiple url.
+                item = self._download_item_with_multiple_dl_url(
+                    item=item, folder=file_name, interrupt_state=interrupt)
             else:
-                r = requests.get(download_url, stream=True)
-            try:
-                item.total_size = int(r.headers['content-length'])
-            except KeyError:
-                item.total_size = 0
+                item = self._download_item_with_single_dl_url(
+                    item=item, filename=file_name, interrupt_state=interrupt)
 
-            with open(file_name_part, 'wb') as f:
-                for data in r.iter_content(chunk_size=1024):
-                    if item.current_state == item.CANCELLED:
-                        interrupt = True
-                        break
-                    if data:
-                        item.current_size += len(data)
-                        f.write(data)
-                        f.flush()
-            if not interrupt:
-                try:
-                    os.rename(file_name_part, file_name)
-                except OSError:
-                    n = 0
-                    file_split = os.path.split(file_name)
-                    while n < 100:
-                        try:
-                            if file_split[1]:
-                                os.rename(file_name_part,
-                                            os.path.join(file_split[0],"({}){}".format(n, file_split[1])))
-                            else:
-                                os.rename(file_name_part, "({}){}".format(n, file_name))
-                            break
-                        except:
-                            n += 1
-                    if n > 100:
-                        file_name = file_name_part
-
-                item.file = file_name
-                item.current_state = item.FINISHED
-                item.file_rdy.emit(item)
-                self.item_finished.emit(item)
-            else:
-                try:
-                    os.remove(file_name_part)
-                except:
-                    pass
             log_d("Items in queue {}".format(self._inc_queue.empty()))
             log_d("Finished downloading: {}".format(download_url))
             self.active_items.remove(item)
