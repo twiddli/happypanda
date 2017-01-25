@@ -601,7 +601,7 @@ class DLManager(QObject):
         URL checking and class instantiating is done in GalleryDownloader class in io_misc.py
         Basic procedure for this method:
         - open url with self._browser and do the parsing
-        - create HenItem and fill out it's attributes
+        - create HenItem and fill out its attributes
         - specify download type (important) from app_constants
         - fetch optional thumbnail on HenItem
         - set download url on HenItem (important)

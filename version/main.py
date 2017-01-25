@@ -64,7 +64,7 @@ def start(test=False):
         except FileExistsError:
             pass
 
-        log_handlers.append(logging.FileHandler('happypanda_debug.log', 'w', 'utf-8'))
+        log_handlers.append(logging.FileHandler(debug_log_path, 'w', 'utf-8'))
         log_level = logging.DEBUG
         app_constants.DEBUG = True
     else:

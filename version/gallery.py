@@ -45,6 +45,7 @@ from PyQt5.QtWidgets import (QListView, QFrame, QLabel,
                              QWidget, QHeaderView, QTableView, QApplication,
                              QMessageBox, QActionGroup, QScroller, QStackedLayout)
 
+from executors import Executors
 import gallerydb
 import app_constants
 import misc

@@ -53,7 +53,7 @@ unrar_tool_path = get('', 'Application', 'unrar tool path')
 # type of download needed by download manager for each site parser
 # NOTE define here if any new type will be supported in the future.
 DOWNLOAD_TYPE_ARCHIVE = 0
-DOWNLOAD_TYPE_TORRENT = 1
+DOWNLOAD_TYPE_TORRENT = 1 # Note: With this type, file will be sent to torrent program
 DOWNLOAD_TYPE_OTHER = 2
 
 VALID_GALLERY_CATEGORY = (
