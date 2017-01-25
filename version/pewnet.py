@@ -204,7 +204,7 @@ class Downloader(QObject):
     @staticmethod
     def _download_with_catch_error(
             target_file, response, item, interrupt_state,
-            use_tempfile=False, catch_errors=None
+            use_tempfile=False, catch_errors=tuple()
     ):
         """Download single file from url response and return changed item and interrupt state.
 
@@ -214,12 +214,14 @@ class Downloader(QObject):
             item: Download item.
             interrupt_state (bool): Interrupt state.
             use_tempfile (bool): Use tempfile when downloading or not.
-            catch_errors (list): List of error that will be catched when downloading.
+            catch_errors (tuple): List of error that will be catched when downloading.
 
         Returns:
             tuple: (item, interrupt_state) where both variables
                 is the changed variables from input.
         """
+        assert isinstance(catch_errors, tuple)
+
         # compatibility
         DownloaderObject = Downloader
 
@@ -242,7 +244,7 @@ class Downloader(QObject):
     @staticmethod
     def _download_single_file(
             target_file, response, item, interrupt_state,
-            use_tempfile=False, catch_errors=None
+            use_tempfile=False, catch_errors=tuple()
     ):
         """Download single file from url response and return changed item and interrupt state.
         Note:
@@ -255,7 +257,7 @@ class Downloader(QObject):
             item: Download item.
             interrupt_state (bool): Interrupt state.
             use_tempfile (bool): Use tempfile when downloading or not.
-            catch_errors (list): List of error that will be catched when downloading.
+            catch_errors (tuple): List of error that will be catched when downloading.
 
         Returns:
             tuple: (item, interrupt_state) where both variables
@@ -263,6 +265,7 @@ class Downloader(QObject):
         """
         #compatibilty
         DownloaderObject = Downloader
+        assert isinstance(catch_errors, tuple)
 
         if catch_errors:
             item, interrupt_state = DownloaderObject._download_with_catch_error(
@@ -405,8 +408,21 @@ class Downloader(QObject):
                 item, interrupt_state = self._download_single_file(
                     target_file=target_file, response=r, item=item,
                     interrupt_state=interrupt_state, use_tempfile=True,
-                    catch_errors=[requests.ConnectionError]
+                    catch_errors=(requests.ConnectionError,)
+                    # NOTE:
+                    # You can't catch when in list, only tuple
+                    # This causes a TypeError:
+                    #   try:
+                    #     raise Exception
+                    #   except [Exception] as err:
+                    #     pass
 
+                    # But this doesn't:
+                    #   try:
+                    #     raise Exception
+                    #   except (Exception,) as err:
+                    #     pass
+                    
                 )
 
         if not interrupt_state:
@@ -500,7 +516,7 @@ class Downloader(QObject):
             self._threads.append(thread)
 
 class HenItem(DownloaderItem):
-    "A convenience class that most methods in DLManager and it's subclasses returns"
+    "A convenience class that most methods in DLManager and its subclasses returns"
     thumb_rdy = pyqtSignal(object)
     def __init__(self, session=None):
         super().__init__(session=session)
@@ -511,7 +527,7 @@ class HenItem(DownloaderItem):
         self.metadata = {}
         self.gallery_name = ""
         self.gallery_url = ""
-        self.download_type = app_constants.HEN_DOWNLOAD_TYPE
+        self.download_type = app_constants.DOWNLOAD_TYPE_OTHER
         self.torrents_found = 0
         self.file_rdy.connect(self.check_type)
 
@@ -524,7 +540,7 @@ class HenItem(DownloaderItem):
         self._thumb_item.file_rdy.connect(thumb_fetched)
 
     def check_type(self):
-        if self.download_type == 1:
+        if self.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             utils.open_torrent(self.file)
 
     def update_metadata(self, key, value):
@@ -572,15 +588,9 @@ class DLManager(QObject):
     _browser = RoboBrowser(history=True,
                         user_agent="Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
                         parser='html.parser', allow_redirects=False)
-    # download type
-    ARCHIVE, TORRENT = False, False
-    def __init__(self):
+    def __init__(self, download_type=app_constants.DOWNLOAD_TYPE_OTHER):
         super().__init__()
-        self.ARCHIVE, self.TORRENT = False, False
-        if app_constants.HEN_DOWNLOAD_TYPE == 0:
-            self.ARCHIVE = True
-        elif app_constants.HEN_DOWNLOAD_TYPE == 1:
-            self.TORRENT = True
+        self._download_type = download_type
 
     def _error(self):
         pass
@@ -588,11 +598,11 @@ class DLManager(QObject):
     def from_gallery_url(self, url):
         """
         Needs to be implemented in site-specific subclass
-        URL checking  and class instantiating is done in GalleryDownloader class in io_misc.py
+        URL checking and class instantiating is done in GalleryDownloader class in io_misc.py
         Basic procedure for this method:
         - open url with self._browser and do the parsing
         - create HenItem and fill out it's attributes
-        - specify download type (important)... 0 for archive and 1 for torrent 2 for other
+        - specify download type (important) from app_constants
         - fetch optional thumbnail on HenItem
         - set download url on HenItem (important)
         - add h_item to download queue
@@ -631,7 +641,7 @@ class ChaikaManager(DLManager):
 
     def from_gallery_url(self, url):
         h_item = HenItem(self._browser.session)
-        h_item.download_type = 0
+        h_item.download_type = self._download_type
         chaika_id = os.path.split(url)
         if chaika_id[1]:
             chaika_id = chaika_id[1]
@@ -702,6 +712,11 @@ class HenManager(DLManager):
 
     def __init__(self):
         super().__init__()
+        if app_constants.HEN_DOWNLOAD_TYPE:
+            self._download_type = app_constants.DOWNLOAD_TYPE_TORRENT
+        else:
+            self._download_type = app_constants.DOWNLOAD_TYPE_ARCHIVE
+
         self.e_url = 'http://g.e-hentai.org/'
 
         exprops = settings.ExProperties()
@@ -762,13 +777,18 @@ class HenManager(DLManager):
         """
         if 'exhentai' in g_url:
             hen = ExHen(settings.ExProperties().cookies)
+            if hen.check_login(hen.cookies) in (0, 1,):
+                raise app_constants.NeedLogin
         else:
             hen = EHen()
+            if not hen.check_login(hen.cookies):
+                raise app_constants.NeedLogin
         log_d("Using {}".format(hen.__repr__()))
         api_metadata, gallery_gid_dict = hen.add_to_queue(g_url, True, False)
         gallery = api_metadata['gmetadata'][0]
 
         h_item = HenItem(self._browser.session)
+        h_item.download_type = self._download_type
         h_item.gallery_url = g_url
         h_item.metadata = EHen.parse_metadata(api_metadata, gallery_gid_dict)
         try:
@@ -779,9 +799,8 @@ class HenManager(DLManager):
         h_item.gallery_name = gallery['title']
         h_item.size = "{0:.2f} MB".format(gallery['filesize']/1048576)
 
-        if self.ARCHIVE:
+        if self._download_type == app_constants.DOWNLOAD_TYPE_ARCHIVE:
             try:
-                h_item.download_type = 0
                 d_url = self._archive_url_d(gallery['gid'], gallery['token'], gallery['archiver_key'])
 
                 # ex/g.e
@@ -824,8 +843,7 @@ class HenManager(DLManager):
                 log.exception("")
                 raise app_constants.HTMLParsing
 
-        elif self.TORRENT:
-            h_item.download_type = 1
+        elif self._download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             h_item.torrents_found = int(gallery['torrentcount'])
             h_item.fetch_thumb()
             if  h_item.torrents_found > 0:

@@ -354,9 +354,10 @@ Enabling Enforce will only allow galleries matching the specified filter in the 
 
 SUPPORTED_DOWNLOAD_URLS=\
 	"""Supported URLs:
-- exhentai/g.e-hentai gallery urls, e.g.: http://g.e-hentai.org/g/618395/0439fa3666/
+- exhentai/g.e-hentai/e-hentai gallery urls, e.g.: https://e-hentai.org/g/618395/0439fa3666/
 - panda.chaika.moe gallery and archive urls
 	http://panda.chaika.moe/[0]/[1]/ where [0] is 'gallery' or 'archive' and [1] are numbers
+- asmhentai.com gallery urls, e.g: http://asmhentai.com/g/102845/
 	"""
 
 SUPPORTED_METADATA_URLS=\
