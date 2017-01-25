@@ -548,7 +548,7 @@ class AppWindow(QMainWindow):
         gallery_action.setToolTip('Contains various gallery related features')
         gallery_action.setMenu(gallery_menu)
         add_gallery_icon = QIcon(app_constants.PLUS_ICON)
-        gallery_action_add = QAction(add_gallery_icon, "Add single gallery...", self)
+        gallery_action_add = QAction(add_gallery_icon, "Add a gallery...", self)
         gallery_action_add.triggered.connect(lambda: gallery.CommonView.spawn_dialog(self))
         gallery_action_add.setToolTip('Add a single gallery thoroughly')
         gallery_action_add.setShortcut(new_gallery_k)

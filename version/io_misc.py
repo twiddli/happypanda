@@ -308,6 +308,8 @@ class GalleryDownloader(QWidget):
             url = url.lower()
             
             manager = self.website_validator(url)
+            if isinstance(manager, pewnet.HenManager):
+                url = manager.gtoEh(url)
             h_item = manager.from_gallery_url(url)
         except app_constants.WrongURL:
             self.info_lbl.setText("<font color='red'>Failed to add:\n{}</font>".format(url))
@@ -318,11 +320,11 @@ class GalleryDownloader(QWidget):
             self.info_lbl.show()
             return
         except app_constants.HTMLParsing:
-            self.info_lbl.setText("<font color='red'HTML parsing error:\n{}</font>".format(url))
+            self.info_lbl.setText("<font color='red'>HTML parsing error:\n{}</font>".format(url))
             self.info_lbl.show()
             return
         except app_constants.WrongLogin:
-            self.info_lbl.setText("<font color='red'Wrong login info to download:\n{}</font>".format(url))
+            self.info_lbl.setText("<font color='red'>Wrong login info to download:\n{}</font>".format(url))
             self.info_lbl.show()
             return
         if h_item:
@@ -343,6 +345,8 @@ class GalleryDownloader(QWidget):
             return False
 
         if regex_validate("((g\.e-hentai)\.org\/g\/[0-9]+\/[a-z0-9]+)"):
+            manager = pewnet.HenManager()
+        elif regex_validate("((?<!g\.)(e-hentai)\.org\/g\/[0-9]+\/[a-z0-9]+)"):
             manager = pewnet.HenManager()
         elif regex_validate("((exhentai)\.org\/g\/[0-9]+\/[a-z0-9]+)"):
             exprops = settings.ExProperties()

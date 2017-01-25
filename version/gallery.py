@@ -640,7 +640,7 @@ class GalleryModel(QAbstractTableModel):
             elif section == self._LANGUAGE:
                 return 'Language'
             elif section == self._LINK:
-                return 'Link'
+                return 'URL'
             elif section == self._DESCR:
                 return 'Description'
             elif section == self._DATE_ADDED:

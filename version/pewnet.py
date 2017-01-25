@@ -374,7 +374,7 @@ class HenManager(DLManager):
 
     def __init__(self):
         super().__init__()
-        self.e_url = 'http://g.e-hentai.org/'
+        self.e_url = 'https://e-hentai.org/'
 
         exprops = settings.ExProperties()
         cookies = exprops.cookies
@@ -428,10 +428,20 @@ class HenManager(DLManager):
         except AttributeError:
             raise app_constants.HTMLParsing
 
+    def gtoEh(self, g_url):
+        "convert g.e-h to e-h"
+        if 'g.e-hentai' in g_url:
+            g_url = g_url.replace('g.e-hentai', 'e-hentai')
+            if not 'https' in g_url and 'http' in g_url:
+                g_url = g_url.replace('http', 'https')
+        return g_url
+
     def from_gallery_url(self, g_url):
         """
         Finds gallery download url and puts it in download queue
         """
+        if not g_url:
+            return False
         if 'exhentai' in g_url:
             hen = ExHen(settings.ExProperties().cookies)
         else:
@@ -439,6 +449,7 @@ class HenManager(DLManager):
         log_d("Using {}".format(hen.__repr__()))
         api_metadata, gallery_gid_dict = hen.add_to_queue(g_url, True, False)
         gallery = api_metadata['gmetadata'][0]
+        log_d("".format(gallery))
 
         h_item = HenItem(self._browser.session)
         h_item.gallery_url = g_url
@@ -481,6 +492,8 @@ class HenManager(DLManager):
                 else:
                     dl_a = self._browser.find('a')
                     dl = dl_a.get('href')
+                if 'forums.e-hentai.org' in dl:
+                    raise app_constants.NeedLogin
                 self._browser.open(dl)
                 succes_test = self._browser.find('p')
                 if succes_test and 'successfully' in succes_test.text:
@@ -518,7 +531,6 @@ class ExHenManager(HenManager):
     def __init__(self):
         super().__init__()
         self.e_url = "https://exhentai.org/"
-
 
 
 class CommenHen:
@@ -592,7 +604,7 @@ class CommenHen:
         return api_data, galleryid_dict
 
     @classmethod
-    def login(cls, user, password):
+    def login(cls, user, password, relogin=False):
         pass
 
     @classmethod
@@ -653,15 +665,16 @@ class NHen(CommenHen):
     LOGIN_URL = "http://nhentai.net/login/"
 
     @classmethod
-    def login(cls, user, password):
+    def login(cls, user, password, relogin=False):
         exprops = settings.ExProperties(settings.ExProperties.NHENTAI)
-        if cls.COOKIES:
-            if cls.check_login(cls.COOKIES):
-                return cls.COOKIES
-        elif exprops.cookies:
-            if cls.check_login(exprops.cookies):
-                cls.COOKIES.update(exprops.cookies)
-                return cls.COOKIES
+        if not relogin:
+            if cls.COOKIES:
+                if cls.check_login(cls.COOKIES):
+                    return cls.COOKIES
+            elif exprops.cookies:
+                if cls.check_login(exprops.cookies):
+                    cls.COOKIES.update(exprops.cookies)
+                    return cls.COOKIES
 
         cls._browser.open(cls.LOGIN_URL)
         login_form = cls._browser.get_form()
@@ -700,8 +713,8 @@ class EHen(CommenHen):
     "Fetches galleries from ehen"
     def __init__(self, cookies = None):
         self.cookies = cookies
-        self.e_url = "http://g.e-hentai.org/api.php"
-        self.e_url_o = "http://g.e-hentai.org/"
+        self.e_url = "https://e-hentai.org/api.php"
+        self.e_url_o = "https://e-hentai.org/"
 
     @classmethod
     def apply_metadata(cls, g, data, append = True):
@@ -909,33 +922,35 @@ class EHen(CommenHen):
         return parsed_metadata
 
     @classmethod
-    def login(cls, user, password):
+    def login(cls, user, password, relogin=False):
         """
         Logs into g.e-h
         """
         log_i("Attempting EH Login")
         eh_c = {}
         exprops = settings.ExProperties()
-        if cls.COOKIES:
-            if cls.check_login(cls.COOKIES):
-                return cls.COOKIES
-        elif exprops.cookies:
-            if cls.check_login(exprops.cookies):
-                cls.COOKIES.update(exprops.cookies)
-                return cls.COOKIES
+        if not relogin:
+            if cls.COOKIES:
+                if cls.check_login(cls.COOKIES):
+                    return cls.COOKIES
+            elif exprops.cookies:
+                if cls.check_login(exprops.cookies):
+                    cls.COOKIES.update(exprops.cookies)
+                    return cls.COOKIES
 
         p = {
             'CookieDate': '1',
-            'b':'d', 
-            'bt':'1-1',
+            'b':'d',
+            'bt':'1-1', 
             'UserName':user,
             'PassWord':password
             }
 
         eh_c = requests.post('https://forums.e-hentai.org/index.php?act=Login&CODE=01', data=p).cookies.get_dict()
-        exh_c = requests.get('https://exhentai.org', cookies=eh_c).cookies.get_dict()
+        #exh_c = requests.get('https://exhentai.org', cookies=eh_c).cookies.get_dict()
 
-        eh_c.update(exh_c)
+        #eh_c.update(exh_c)
+        log_d("EH Cookeis: {}".format(eh_c))
 
         if not cls.check_login(eh_c):
             log_w("EH login failed")

@@ -1670,6 +1670,8 @@ class Gallery:
             term = self.status
         elif ns == 'Artist':
             term = self.artist
+        elif ns == 'Url':
+            term = self.link
         elif ns in ['Descr', 'Description']:
             term = self.info
         elif ns in ['Chapter', 'Chapters']:

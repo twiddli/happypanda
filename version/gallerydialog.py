@@ -245,7 +245,7 @@ class GalleryDialog(QWidget):
         gallery_layout.addRow("Status:", checkbox_layout(self.status_box))
         gallery_layout.addRow("Publication Date:", checkbox_layout(self.pub_edit))
         gallery_layout.addRow("Path:", self.path_lbl)
-        gallery_layout.addRow("Link:", link_layout)
+        gallery_layout.addRow("URL:", link_layout)
 
         self.title_edit.setFocus()
 
