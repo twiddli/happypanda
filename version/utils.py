@@ -645,7 +645,7 @@ def open_chapter(chapterpath, archive=None):
 
     def find_f_img_folder():
         filepath = os.path.join(temp_p, [x for x in sorted([y.name for y in scandir.scandir(temp_p)])\
-            if x.lower().endswith(IMG_FILES)][0]) # Find first page
+            if x.lower().endswith(IMG_FILES) and not x.startswith('.')][0]) # Find first page
         return temp_p if send_folder else filepath
 
     def find_f_img_archive(extract=True):
@@ -673,12 +673,12 @@ def open_chapter(chapterpath, archive=None):
                 filepath = t_p
             else:
                 filepath = os.path.join(t_p, [x for x in sorted([y.name for y in scandir.scandir(t_p)])\
-                    if x.lower().endswith(IMG_FILES)][0]) # Find first page
+                    if x.lower().endswith(IMG_FILES) and not x.startswith('.')][0]) # Find first page
                 filepath = os.path.abspath(filepath)
         else:
             if is_archive or chapterpath.endswith(ARCHIVE_FILES):
                 con = zip.dir_contents('')
-                f_img = [x for x in sorted(con) if x.lower().endswith(IMG_FILES)]
+                f_img = [x for x in sorted(con) if x.lower().endswith(IMG_FILES) and not x.startswith('.')]
                 if not f_img:
                     log_w('Extracting archive.. There are no images in the top-folder. ({})'.format(archive))
                     return find_f_img_archive()
@@ -704,6 +704,10 @@ def open_chapter(chapterpath, archive=None):
     except FileNotFoundError:
         log.exception('Could not find chapter {}'.format(chapterpath))
         app_constants.NOTIF_BAR.add_text("Chapter does no longer exist!")
+        return
+    except IndexError:
+        log.exception('No images found: {}'.format(chapterpath))
+        app_constants.NOTIF_BAR.add_text("No images found in chapter!")
         return
 
     if send_folder_t in custom_args:
@@ -769,16 +773,16 @@ def get_gallery_img(gallery_or_path, chap_number=0):
             temp_path = os.path.join(app_constants.temp_dir, str(uuid.uuid4()))
             os.mkdir(temp_path)
             if not archive:
-                f_img_name = sorted([img for img in zip.namelist() if img.lower().endswith(IMG_FILES)])[0]
+                f_img_name = sorted([img for img in zip.namelist() if img.lower().endswith(IMG_FILES) and not img.startswith('.')])[0]
             else:
-                f_img_name = sorted([img for img in zip.dir_contents(path) if img.lower().endswith(IMG_FILES)])[0]
+                f_img_name = sorted([img for img in zip.dir_contents(path) if img.lower().endswith(IMG_FILES) and not img.startswith('.')])[0]
             img_path = zip.extract(f_img_name, temp_path)
             zip.close()
         except app_constants.CreateArchiveFail:
             img_path = app_constants.NO_IMAGE_PATH
     elif os.path.isdir(real_path):
         log_i('Getting image from folder')
-        first_img = sorted([img.name for img in scandir.scandir(real_path) if img.name.lower().endswith(tuple(IMG_FILES))])
+        first_img = sorted([img.name for img in scandir.scandir(real_path) if img.name.lower().endswith(tuple(IMG_FILES)) and not img.name.startswith('.')])
         if first_img:
             img_path = os.path.join(real_path, first_img[0])
 
