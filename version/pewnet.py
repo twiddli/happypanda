@@ -204,7 +204,7 @@ class Downloader(QObject):
     @staticmethod
     def _download_with_catch_error(
             target_file, response, item, interrupt_state,
-            use_tempfile=False, catch_errors=tuple()
+            use_tempfile=False, catch_errors=None
     ):
         """Download single file from url response and return changed item and interrupt state.
 
@@ -220,7 +220,8 @@ class Downloader(QObject):
             tuple: (item, interrupt_state) where both variables
                 is the changed variables from input.
         """
-        assert isinstance(catch_errors, tuple)
+        if catch_errors is None:
+            catch_errors = tuple()
 
         # compatibility
         DownloaderObject = Downloader
@@ -244,7 +245,7 @@ class Downloader(QObject):
     @staticmethod
     def _download_single_file(
             target_file, response, item, interrupt_state,
-            use_tempfile=False, catch_errors=tuple()
+            use_tempfile=False, catch_errors=None
     ):
         """Download single file from url response and return changed item and interrupt state.
         Note:
@@ -265,7 +266,6 @@ class Downloader(QObject):
         """
         #compatibilty
         DownloaderObject = Downloader
-        assert isinstance(catch_errors, tuple)
 
         if catch_errors:
             item, interrupt_state = DownloaderObject._download_with_catch_error(
