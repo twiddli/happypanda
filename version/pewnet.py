@@ -355,8 +355,11 @@ class ChaikaManager(DLManager):
             if chaika['archives']:
                 h_item.download_url = self.url + chaika['archives'][0]['download'][1:]
                 return chaika['archives'][0]['id']
-        except:
-            log.exception("Error parsing chaika")
+        except AttributeError:
+            log.exception("HTML parsing error")
+            raise app_constants.HTMLParsing
+        except requests.ConnectionError:
+            log.exception("Connection Error")
 
     def _archive_page(self, a_id, h_item):
         "Returns url to gallery and updates h_item metadata from the /archive/a_id page"
@@ -366,7 +369,7 @@ class ChaikaManager(DLManager):
             r.raise_for_status()
             chaika = r.json()
             return chaika['gallery']
-        except:
+        except requests.ConnectionError:
             log.exception('Error parsing chaika')
 
 class HenManager(DLManager):
@@ -506,7 +509,7 @@ class HenManager(DLManager):
                     Downloader.add_to_queue(h_item, self._browser.session)
                     return h_item
             except AttributeError:
-                log.exception("")
+                log.exception("HTML parsing error")
                 raise app_constants.HTMLParsing
 
         elif self.TORRENT:

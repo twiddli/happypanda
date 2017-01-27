@@ -153,7 +153,7 @@ class AppWindow(QMainWindow):
             if app_constants.UPDATE_VERSION != app_constants.vs:
                 pop = misc.BasePopup(self, blur=False)
                 ml = QVBoxLayout(pop.main_widget)
-                ml.addWidget(QLabel("\nGoodbye Happypanda(old)!\n\n\nHello, this is the last release of 'old' Happypanda.\n"+
+                ml.addWidget(QLabel("\nGoodbye Happypanda!\n\n\nHello, this is the last release of 'old' Happypanda.\n"+
                     "This means that I (personally) won't be adding any new features or fix bugs.\n\n"+
                     "I have started a new project where I (with the help of others)\n try to create a better Happypanda from scratch.\n\n"+
                     "Please follow me on twitter (@pewspew) to keep yourself updated!\n"))
@@ -170,9 +170,17 @@ class AppWindow(QMainWindow):
             app_constants.DOWNLOAD_MANAGER = self.download_manager
             self.download_manager.start_manager(4)
 
-        if app_constants.FIRST_TIME_LEVEL < 5:
-            log_i('Invoking first time level {}'.format(5))
-            app_constants.INTERNAL_LEVEL = 5
+        if app_constants.FIRST_TIME_LEVEL < 7:
+            log_i('Invoking first time level {}'.format(7))
+            app_constants.INTERNAL_LEVEL = 7
+            if app_constants.EXTERNAL_VIEWER_ARGS == '{file}':
+                app_constants.EXTERNAL_VIEWER_ARGS = '{$file}'
+                settings.set('{$file}','Advanced', 'external viewer args')
+                settings.save()
+            done()
+        elif app_constants.FIRST_TIME_LEVEL < app_constants.INTERNAL_LEVEL:
+            log_i('Invoking first time level {}'.format(app_constants.INTERNAL_LEVEL))
+            app_constants.INTERNAL_LEVEL = 8
             app_widget = misc.AppDialog(self)
             app_widget.note_info.setText("<font color='red'>IMPORTANT:</font> Application restart is required when done")
             app_widget.restart_info.hide()
@@ -183,19 +191,10 @@ class AppWindow(QMainWindow):
             self.admin_db.DONE.connect(self.admin_db.deleteLater)
             self.admin_db.DATA_COUNT.connect(app_widget.prog.setMaximum)
             self.admin_db.PROGRESS.connect(app_widget.prog.setValue)
-            self.admin_db_method_invoker.connect(self.admin_db.from_v021_to_v022)
+            self.admin_db_method_invoker.connect(self.admin_db.rebuild_database)
             self.admin_db_method_invoker.connect(app_widget.show)
             app_widget.adjustSize()
-            db_p = os.path.join(os.path.split(database.db_constants.DB_PATH)[0], 'sadpanda.db')
             self.admin_db_method_invoker.emit(db_p)
-        elif app_constants.FIRST_TIME_LEVEL < 7:
-            log_i('Invoking first time level {}'.format(7))
-            app_constants.INTERNAL_LEVEL = 7
-            if app_constants.EXTERNAL_VIEWER_ARGS == '{file}':
-                app_constants.EXTERNAL_VIEWER_ARGS = '{$file}'
-                settings.set('{$file}','Advanced', 'external viewer args')
-                settings.save()
-            done()
         else:
             done()
 

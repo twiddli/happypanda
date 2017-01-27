@@ -2115,14 +2115,14 @@ class AdminDB(QObject):
 
     def rebuild_database(self):
         "Rebuilds database"
-        log_i("Initiating datbase rebuild")
+        log_i("Initiating database rebuild")
         utils.backup_database()
         log_i("Getting galleries...")
         galleries = GalleryDB.get_all_gallery()
         self.DATA_COUNT.emit(len(galleries))
         db.DBBase._DB_CONN.close()
         log_i("Removing old database...")
-        log_i("Initiating new database...")
+        log_i("Creating new database...")
         temp_db = os.path.join(db_constants.DB_ROOT, "happypanda_temp.db")
         if os.path.exists(temp_db):
             os.remove(temp_db)
