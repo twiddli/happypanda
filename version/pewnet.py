@@ -24,7 +24,10 @@ import time
 import uuid
 from datetime import datetime
 from queue import Queue
-from tempfile import NamedTemporaryFile
+from tempfile import (
+    NamedTemporaryFile,
+    mkdtemp,
+)
 
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
@@ -243,11 +246,75 @@ class Downloader(QObject):
         return item, interrupt_state
 
     @staticmethod
+    def _download_with_tempfile(
+            target_file, response, item, interrupt_state,
+    ):
+        """Download file with tempfile return changed item and interrupt state.
+
+        method used on window taken and modified from http://stackoverflow.com/a/15259358
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+            use_tempfile (bool): Use tempfile when downloading or not.
+
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+
+        """
+        # compatibilty
+        DownloaderObject = Downloader
+
+        if app_constants.OS_NAME != 'windows':  # linux and osx only
+            with NamedTemporaryFile() as tempfile:
+                item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=tempfile.name,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=False
+                )
+            if item.current_state != item.CANCELLED:
+                shutil.copyfile(tempfile.name, target_file)
+        else:  # window only
+            try:
+                # create temp folder and file
+                temp_dir = mkdtemp()
+                temp_file = os.path.join(temp_dir, os.path.basename(target_file))
+                # process temp file
+                item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=temp_file,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=False
+                )
+                # only on correct state, move the downloaded file.
+                if item.current_state != item.CANCELLED:
+                    shutil.move(temp_file, target_file)
+            finally:
+                shutil.rmtree(temp_dir)
+
+        return item, interrupt_state
+
+
+
+    @staticmethod
     def _download_single_file(
             target_file, response, item, interrupt_state,
             use_tempfile=False, catch_errors=None
     ):
         """Download single file from url response and return changed item and interrupt state.
+
+        this method is wrapper for these methods::
+
+        - _download_with_catch_error
+        - _download_with_tempfile
+        - _download_with_simple_method
+
         Note:
             item's current size may not give exact size.
             especially when there is multiple interupt and tempfile is used.
@@ -264,7 +331,7 @@ class Downloader(QObject):
             tuple: (item, interrupt_state) where both variables
                 is the changed variables from input.
         """
-        #compatibilty
+        # compatibilty
         DownloaderObject = Downloader
 
         if catch_errors:
@@ -279,15 +346,12 @@ class Downloader(QObject):
             )
         elif use_tempfile:
             with NamedTemporaryFile() as tempfile:
-                item, interrupt_state = DownloaderObject._download_single_file(
+                item, interrupt_state = DownloaderObject._download_with_tempfile(
                     target_file=tempfile.name,
                     response=response,
                     item=item,
                     interrupt_state=interrupt_state,
-                    use_tempfile=False
                 )
-                if item.current_state != item.CANCELLED:
-                    shutil.copyfile(tempfile.name, target_file)
         else:
             item, interrupt_state = DownloaderObject._download_with_simple_method(
                 target_file=target_file,
