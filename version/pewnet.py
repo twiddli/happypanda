@@ -247,16 +247,15 @@ class Downloader(QObject):
         return item, interrupt_state
 
     @staticmethod
-    def _download_with_tempfile(
-            temp_file, target_file, response, item, interrupt_state
+    def _download_with_tempfile_windows(
+            target_file, response, item, interrupt_state
     ):
         """Download file with tempfile return changed item and interrupt state.
 
         method used on window taken and modified from http://stackoverflow.com/a/15259358
 
         Args:
-            temp_file: Temporary filename where url will be downloaded.
-            target_file: Target filename where downloaded item will be moved/copied to.
+            target_file: Target filename where url will be downloaded.
             response (requests.Response): Response from url.
             item: Download item.
             interrupt_state (bool): Interrupt state.
@@ -267,14 +266,29 @@ class Downloader(QObject):
         """
         # compatibilty
         DownloaderObject = Downloader
+        closed_ = False
+        deleted_ = False
+        file_, tempfile = mkstemp()
+        try:
+            item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=tempfile,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=False
+                )
 
-        item, interrupt_state = DownloaderObject._download_single_file(
-                target_file=temp_file,
-                response=response,
-                item=item,
-                interrupt_state=interrupt_state,
-                use_tempfile=False
-            )
+            if item.current_state != item.CANCELLED:
+                    os.close(file_)
+                    closed_ = True
+                    shutil.copyfile(tempfile, target_file)
+                    os.remove(tempfile)
+                    deleted_ = True
+        finally:
+            if not closed_:
+                os.close(file_)
+            if not deleted_:
+                os.remove(tempfile)
         return item, interrupt_state
 
 
@@ -322,38 +336,24 @@ class Downloader(QObject):
 
             )
         elif use_tempfile:
-            window_ = app_constants.OS_NAME == 'windows' # window only
-            closed_ = False
-            try:
-                if window_:
-                    file_, tempfile = mkstemp()
-                else:
-                    file_ = NamedTemporaryFile()
-                    tempfile = file_.name
-
-                item, interrupt_state = DownloaderObject._download_with_tempfile(
-                        temp_file=tempfile,
+            if app_constants.OS_NAME == 'windows':
+                item, interrupt_state = DownloaderObject._download_with_tempfile_windows(
                         target_file=target_file,
                         response=response,
                         item=item,
-                        interrupt_state=interrupt_state
+                        interrupt_state=interrupt_state,
                     )
-
-                if window_:
-                    os.close(file_) # can't access open file d. on windows
-                    closed_ = True
+            else: # unix
+                with NamedTemporaryFile() as tempfile:
+                    item, interrupt_state = DownloaderObject._download_single_file(
+                        target_file=tempfile.name,
+                        response=response,
+                        item=item,
+                        interrupt_state=interrupt_state,
+                        use_tempfile=False
+                    )
                     if item.current_state != item.CANCELLED:
-                        shutil.copyfile(tempfile, target_file)
-                    os.remove(tempfile) # responsible for deleting it. Should put this in finally clause
-                else:
-                    if item.current_state != item.CANCELLED:
-                        shutil.copyfile(temp_ile, target_file)
-                    file_.close() # file will be deleted when closed
-                    closed_ = True
-
-            finally:
-                if not closed_:
-                    os.close(file_) if window_ else file_.close()
+                        shutil.copyfile(tempfile.name, target_file)
         else:
             item, interrupt_state = DownloaderObject._download_with_simple_method(
                 target_file=target_file,
