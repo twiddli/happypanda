@@ -302,7 +302,6 @@ class Downloader(QObject):
         this method is wrapper for these methods::
 
         - _download_with_catch_error
-        - _download_with_tempfile
         - _download_with_simple_method
 
         Note:
