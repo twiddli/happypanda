@@ -20,6 +20,7 @@ import utils
 import pewnet
 import settings
 import fetch
+from asm_manager import AsmManager
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -57,7 +58,7 @@ class GalleryDownloaderUrlExtracter(QWidget):
 
 class GalleryDownloaderItem(QObject):
     """
-    Receives a HenItem
+    HenItem wrapper
     """
     d_item_ready = pyqtSignal(object)
     def __init__(self, hitem):
@@ -87,8 +88,14 @@ class GalleryDownloaderItem(QObject):
         self.cost_item.setToolTip(url)
         self.size_item = QTableWidgetItem(self.item.size)
         self.size_item.setToolTip(url)
-        type = 'Archive' if hitem.download_type == 0 else 'Torrent'
-        self.type_item = QTableWidgetItem(type)
+        _type = 'Unknown'
+        if hitem.download_type == app_constants.DOWNLOAD_TYPE_ARCHIVE:
+            _type = 'Archive'
+        if hitem.download_type == app_constants.DOWNLOAD_TYPE_OTHER:
+            _type = 'Other'
+        if hitem.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
+            _type = 'Torrent'
+        self.type_item = QTableWidgetItem(_type)
         self.type_item.setToolTip(url)
 
         self.status_timer = QTimer()
@@ -107,10 +114,10 @@ class GalleryDownloaderItem(QObject):
 
     def done(self):
         self.status_timer.stop()
-        if self.item.download_type == 0:
-            self.status_item.setText("Creating gallery...")
-        else:
+        if self.item.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             self.status_item.setText("Sent to torrent client!")
+        else:
+            self.status_item.setText("Creating gallery...")
 
 class GalleryDownloaderList(QTableWidget):
     """
@@ -164,7 +171,7 @@ class GalleryDownloaderList(QTableWidget):
     def add_entry(self, hitem):
         assert isinstance(hitem, pewnet.HenItem)
         g_item = GalleryDownloaderItem(hitem)
-        if hitem.download_type == 0:
+        if not hitem.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             g_item.d_item_ready.connect(self._init_gallery)
 
         self.insertRow(0)
@@ -203,11 +210,22 @@ class GalleryDownloaderList(QTableWidget):
             event.ignore()
 
     def _init_gallery(self, download_item):
+        """Init gallery.
+
+        Args:
+            download_item(:class:`.gallery_downloader_item_obj.GalleryDownloaderItemObject`):
+            Downloaded item.
+        """
         assert isinstance(download_item, GalleryDownloaderItem)
+        # NOTE: try to use ehen's apply_metadata first
+        # manager have to edit item.metadata to match this method
         file = download_item.item.file
         app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(file))
         self._download_items[file] = download_item
-        self._download_items[utils.move_files(file, only_path=True)] = download_item # better safe than sorry
+        self._download_items[utils.move_files(file, only_path=True)] = download_item  # better safe than sorry
+        if download_item.item.download_type == app_constants.DOWNLOAD_TYPE_OTHER:
+            pass # do stuff here?
+
         self.init_fetch_instance.emit([file])
 
     def _gallery_to_model(self):
@@ -297,7 +315,6 @@ class GalleryDownloader(QWidget):
             except IndexError:
                 return
         self.info_lbl.hide()
-        log_i('Adding download entry: {}'.format(url))
         h_item = None
         try:
             if not url:
@@ -307,6 +324,7 @@ class GalleryDownloader(QWidget):
                 self.url_inserter.clear()
             url = url.lower()
             
+            log_i('Adding download entry: {}'.format(url))
             manager = self.website_validator(url)
             if isinstance(manager, pewnet.HenManager):
                 url = manager.gtoEh(url)
@@ -328,7 +346,7 @@ class GalleryDownloader(QWidget):
             self.info_lbl.show()
             return
         if h_item:
-            log_i('Successfully added download entry')
+            log_i('Successfully added to download entry: {}'.format(h_item.gallery_name if h_item.gallery_name else 'an item'))
             self.download_list.add_entry(h_item)
 
     def website_validator(self, url):
@@ -356,6 +374,8 @@ class GalleryDownloader(QWidget):
                 raise app_constants.NeedLogin()
         elif regex_validate("(panda\.chaika\.moe\/(archive|gallery)\/[0-9]+)"):
             manager = pewnet.ChaikaManager()
+        elif regex_validate("(asmhentai\.com\/g\/[0-9]+)"):
+            manager = AsmManager()
         else:
             raise app_constants.WrongURL
 

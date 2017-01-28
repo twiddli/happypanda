@@ -50,6 +50,25 @@ else:
 # path to unrar tool binary
 unrar_tool_path = get('', 'Application', 'unrar tool path')
 
+# type of download needed by download manager for each site parser
+# NOTE define here if any new type will be supported in the future.
+DOWNLOAD_TYPE_ARCHIVE = 0
+DOWNLOAD_TYPE_TORRENT = 1 # Note: With this type, file will be sent to torrent program
+DOWNLOAD_TYPE_OTHER = 2
+
+VALID_GALLERY_CATEGORY = (
+    'Doujinshi',
+    'Manga',
+    'Artist CG',
+    'Game CG',
+    'Western',
+    'Non-H',
+    'Image Set',
+    'Cosplay',
+    'Miscellaneous',
+    'Private'
+)
+
 #default stylesheet path
 default_stylesheet_path = os.path.join(static_dir,"style.css")
 user_stylesheet_path = ""
@@ -209,7 +228,7 @@ ALWAYS_CHOOSE_FIRST_HIT = get(False, 'Web', 'always choose first hit', bool)
 USE_GALLERY_LINK = get(True, 'Web', 'use gallery link', bool)
 USE_JPN_TITLE = get(False, 'Web', 'use jpn title', bool)
 CONTINUE_AUTO_METADATA_FETCHER = get(True, 'Web', 'continue auto metadata fetcher', bool)
-HEN_DOWNLOAD_TYPE = get(0, 'Web', 'hen download type', int)
+HEN_DOWNLOAD_TYPE = get(DOWNLOAD_TYPE_ARCHIVE, 'Web', 'hen download type', int)
 DOWNLOAD_DIRECTORY = get('downloads', 'Web', 'download directory', str)
 TORRENT_CLIENT = get('', 'Web', 'torrent client', str)
 HEN_LIST = get(['chaikahen'], 'Web', 'hen list', list)
@@ -335,9 +354,10 @@ Enabling Enforce will only allow galleries matching the specified filter in the 
 
 SUPPORTED_DOWNLOAD_URLS=\
 	"""Supported URLs:
-- exhentai/g.e-hentai gallery urls, e.g.: http://g.e-hentai.org/g/618395/0439fa3666/
+- exhentai/g.e-hentai/e-hentai gallery urls, e.g.: https://e-hentai.org/g/618395/0439fa3666/
 - panda.chaika.moe gallery and archive urls
 	http://panda.chaika.moe/[0]/[1]/ where [0] is 'gallery' or 'archive' and [1] are numbers
+- asmhentai.com gallery urls, e.g: http://asmhentai.com/g/102845/
 	"""
 
 SUPPORTED_METADATA_URLS=\

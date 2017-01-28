@@ -12,18 +12,33 @@
 #along with Happypanda.  If not, see <http://www.gnu.org/licenses/>.
 #"""
 
-import requests, logging, random, time, threading, html, uuid, os
+import html
+import logging
+import os
+import random
 import re as regex
-from bs4 import BeautifulSoup
-from robobrowser import RoboBrowser
+import requests
+import shutil
+import threading
+import time
+import uuid
 from datetime import datetime
 from queue import Queue
+from tempfile import (
+    NamedTemporaryFile,
+    mkstemp
+)
+
+from bs4 import BeautifulSoup
+from robobrowser import RoboBrowser
+from robobrowser.exceptions import RoboError
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import app_constants
 import utils
 import settings
+from utils import makedirs_if_not_exists
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -97,80 +112,458 @@ class Downloader(QObject):
 
         return item
 
+    @staticmethod
+    def remove_file(filename):
+        """Remove file and ignore any error when doing it.
+
+        Args:
+            filename: filename to be removed.
+        """
+        try:
+            os.remove(filename)
+        except:
+            pass
+
+    @staticmethod
+    def _get_total_size(response):
+        """get total size from requests response.
+        Args:
+            response (requests.Response): Response from request.
+        """
+        try:
+            return int(response.headers['content-length'])
+        except KeyError:
+            return 0
+
+    def _get_response(self, url):
+        """get response from url.
+        Args:
+            url : Url of the response
+        Returns:
+            requests.Response: Response from url
+        """
+        if self._browser_session:
+            r = self._browser_session.get(url, stream=True)
+        else:
+            r = requests.get(url, stream=True)
+        return r
+
+    def _get_item_and_temp_base(self):
+        """get item and temporary folder if specified.
+
+        Returns:
+            tuple: (item, temp_base), where temp_base is the temporary folder.
+        """
+        item = self._inc_queue.get()
+        temp_base = None
+        if isinstance(item, dict):
+            temp_base = item['dir']
+            item = item['item']
+        return item, temp_base
+
+    def _get_filename(self, item, temp_base=None):
+        """get filename based on input.
+
+        Args:
+            item: Download item
+            temp_base: Optional temporary folder
+
+        Returns:
+            str: Edited filename
+        """
+        file_name = item.name if item.name else str(uuid.uuid4())
+        invalid_chars = '\\/:*?"<>|'
+        for x in invalid_chars:
+            file_name = file_name.replace(x, '')
+        file_name = os.path.join(self.base, file_name) if not temp_base else \
+            os.path.join(temp_base, file_name)
+        return file_name
+
+    @staticmethod
+    def _download_with_simple_method(target_file, response, item, interrupt_state):
+        """download single file with simple method.
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        chunk_size = 1024
+        with open(target_file, 'wb') as f:
+            for data in response.iter_content(chunk_size=chunk_size):
+                if item.current_state == item.CANCELLED:
+                    interrupt_state = True
+                    break
+                if data:
+                    item.current_size += len(data)
+                    f.write(data)
+                    f.flush()
+
+        return item, interrupt_state
+
+    @staticmethod
+    def _download_with_catch_error(
+            target_file, response, item, interrupt_state,
+            use_tempfile=False, catch_errors=None
+    ):
+        """Download single file from url response and return changed item and interrupt state.
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+            use_tempfile (bool): Use tempfile when downloading or not.
+            catch_errors (tuple): List of error that will be catched when downloading.
+
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        if catch_errors is None:
+            catch_errors = tuple()
+
+        # compatibility
+        DownloaderObject = Downloader
+
+        download_finished = False
+        while not download_finished:
+            try:
+                item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=target_file,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=use_tempfile
+                )
+                download_finished = True
+            except catch_errors as err:
+                log_d('Redownloading because following error.\n{}'.format(err))
+
+        return item, interrupt_state
+
+    @staticmethod
+    def _download_with_tempfile_windows(
+            target_file, response, item, interrupt_state
+    ):
+        """Download file with tempfile return changed item and interrupt state.
+
+        method used on window taken and modified from http://stackoverflow.com/a/15259358
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+
+        """
+        # compatibilty
+        DownloaderObject = Downloader
+        closed_ = False
+        deleted_ = False
+        file_, tempfile = mkstemp()
+        try:
+            item, interrupt_state = DownloaderObject._download_single_file(
+                    target_file=tempfile,
+                    response=response,
+                    item=item,
+                    interrupt_state=interrupt_state,
+                    use_tempfile=False
+                )
+
+            if item.current_state != item.CANCELLED:
+                    os.close(file_)
+                    closed_ = True
+                    shutil.copyfile(tempfile, target_file)
+                    os.remove(tempfile)
+                    deleted_ = True
+        finally:
+            if not closed_:
+                os.close(file_)
+            if not deleted_:
+                os.remove(tempfile)
+        return item, interrupt_state
+
+
+
+    @staticmethod
+    def _download_single_file(
+            target_file, response, item, interrupt_state,
+            use_tempfile=False, catch_errors=None
+    ):
+        """Download single file from url response and return changed item and interrupt state.
+
+        this method is wrapper for these methods::
+
+        - _download_with_catch_error
+        - _download_with_tempfile
+        - _download_with_simple_method
+
+        Note:
+            item's current size may not give exact size.
+            especially when there is multiple interupt and tempfile is used.
+
+        Args:
+            target_file: Target filename where url will be downloaded.
+            response (requests.Response): Response from url.
+            item: Download item.
+            interrupt_state (bool): Interrupt state.
+            use_tempfile (bool): Use tempfile when downloading or not.
+            catch_errors (tuple): List of error that will be catched when downloading.
+
+        Returns:
+            tuple: (item, interrupt_state) where both variables
+                is the changed variables from input.
+        """
+        # compatibilty
+        DownloaderObject = Downloader
+
+        if catch_errors:
+            item, interrupt_state = DownloaderObject._download_with_catch_error(
+                target_file=target_file,
+                response=response,
+                item=item,
+                interrupt_state=interrupt_state,
+                use_tempfile=use_tempfile,
+                catch_errors=catch_errors
+
+            )
+        elif use_tempfile:
+            if app_constants.OS_NAME == 'windows':
+                item, interrupt_state = DownloaderObject._download_with_tempfile_windows(
+                        target_file=target_file,
+                        response=response,
+                        item=item,
+                        interrupt_state=interrupt_state,
+                    )
+            else: # unix
+                with NamedTemporaryFile() as tempfile:
+                    item, interrupt_state = DownloaderObject._download_single_file(
+                        target_file=tempfile.name,
+                        response=response,
+                        item=item,
+                        interrupt_state=interrupt_state,
+                        use_tempfile=False
+                    )
+                    if item.current_state != item.CANCELLED:
+                        shutil.copyfile(tempfile.name, target_file)
+        else:
+            item, interrupt_state = DownloaderObject._download_with_simple_method(
+                target_file=target_file,
+                response=response,
+                item=item,
+                interrupt_state=interrupt_state,
+            )
+
+        return item, interrupt_state
+
+    @staticmethod
+    def _rename_file(filename, filename_part, max_loop=100):
+        """Custom rename file method.
+
+        Args:
+            filename: Target filename.
+            filename_part: Temporary filename
+            max_loop (int): Maximal loop  on error when renaming the file.
+
+        Returns:
+            str: Filename or filename_part
+        """
+        # compatibility
+        file_name = filename
+        file_name_part = filename_part
+
+        n = 0
+        file_split = os.path.split(file_name)
+        while n < max_loop:
+            try:
+                if file_split[1]:
+                    src_file = file_split[0]
+                    target_file = "({}){}".format(n, file_split[1])
+                else:
+                    src_file = file_name_part
+                    target_file = "({}){}".format(n, file_name)
+                os.rename(src_file, target_file)
+                break
+            except:
+                n += 1
+        if n > max_loop:
+            file_name = file_name_part
+        return file_name
+
+    @staticmethod
+    def _get_total_size_prediction(known_filesize, urls_len):
+        """get total size prediction.
+
+        Args:
+            known_filesize (list): List of known filesize.
+            urls_len (int): Number of urls_len
+
+        Returns:
+            int: Total size predictions.
+        """
+        if not known_filesize:  # empty list
+            return 0
+        if len(known_filesize) == urls_len:
+            return int(sum(known_filesize))
+        return int(sum(known_filesize) * urls_len / len(known_filesize))
+
+    @staticmethod
+    def _get_local_filesize(path):
+        """Get local filesize.
+
+        Args:
+            path: Path of the file.
+
+        Returns:
+            filesize of the file or zero.
+        """
+        try:
+            return os.path.getsize(path)
+        except OSError:
+            return 0
+
+    def _download_item_with_multiple_dl_url(self, item, folder, interrupt_state):
+        """download item with multiple download url.
+
+        This method is modified from _download_item_with_single_dl_url method.
+
+        Important changes::
+        - Create new folder for download.
+        - Method to calculate total size
+        - item.file is now folder name instead of filename
+
+        Args:
+            item: Item with single download url.
+            folder (str): Folder for downloaded file.
+            interrupt_state (bool): Interrupt state
+
+        Returns:
+            Modified item
+        """
+        download_url = item.download_url
+        total_known_filesize = []
+        download_url_len = len(download_url)
+
+        makedirs_if_not_exists(folder)
+        for single_url in download_url:
+            # response
+            r = self._get_response(url=single_url)
+
+            # get total size
+            current_response_filesize = self._get_total_size(response=r)
+            total_known_filesize.append(current_response_filesize)
+            item.total_size = self._get_total_size_prediction(
+                known_filesize=total_known_filesize, urls_len=download_url_len)
+
+            url_basename = os.path.basename(single_url)
+            target_file = os.path.join(folder, url_basename)
+            target_filesize = self._get_local_filesize(path=target_file)
+            if target_filesize == current_response_filesize and target_filesize != 0:
+                item.current_size += current_response_filesize
+                log_d('File is already downloaded.\n{}'.format(target_file))
+            else:
+                # downloading to temp file (file_name_part)
+                item, interrupt_state = self._download_single_file(
+                    target_file=target_file, response=r, item=item,
+                    interrupt_state=interrupt_state, use_tempfile=True,
+                    catch_errors=(requests.ConnectionError,)
+                    # NOTE:
+                    # You can't catch when in list, only tuple
+                    # This causes a TypeError:
+                    #   try:
+                    #     raise Exception
+                    #   except [Exception] as err:
+                    #     pass
+
+                    # But this doesn't:
+                    #   try:
+                    #     raise Exception
+                    #   except (Exception,) as err:
+                    #     pass
+                    
+                )
+
+        if not interrupt_state:
+            item.current_state = item.FINISHED
+            item.file = folder
+            # emit
+            item.file_rdy.emit(item)
+            self.item_finished.emit(item)
+        return item
+
+    def _download_item_with_single_dl_url(self, item, filename, interrupt_state):
+        """download item with single download url.
+        Args:
+            item: Item with single download url.
+            filename (str): Filename for downloaded file.
+            interrupt_state (bool): Interrupt state
+        Returns:
+            Modified item
+        """
+        # compatibility
+        file_name = filename
+        interrupt = interrupt_state
+        download_url = item.download_url
+        file_name_part = file_name + '.part'
+
+        # response
+        r = self._get_response(url=download_url)
+        # get total size
+        item.total_size = self._get_total_size(response=r)
+
+        # downloading to temp file (file_name_part)
+        item, interrupt = self._download_single_file(
+            target_file=file_name_part, response=r, item=item, interrupt_state=interrupt)
+
+        if not interrupt:
+            # post operation when no interrupt
+            try:
+                os.rename(file_name_part, file_name)
+            except OSError:
+                file_name = self._rename_file(
+                    filename=file_name, filename_part=file_name_part)
+
+            item.file = file_name
+            item.current_state = item.FINISHED
+            # emit
+            item.file_rdy.emit(item)
+            self.item_finished.emit(item)
+        else:
+            self.remove_file(filename=file_name_part)
+        return item
+
     def _downloading(self):
         "The downloader. Put in a thread."
         while True:
             log_d("Download items in queue: {}".format(self._inc_queue.qsize()))
             interrupt = False
-            item = self._inc_queue.get()
-            temp_base = None
-            if isinstance(item, dict):
-                temp_base = item['dir']
-                item = item['item']
+            item, temp_base = self._get_item_and_temp_base()
 
             log_d("Stating item download")
             item.current_state = item.DOWNLOADING
-            file_name = item.name if item.name else str(uuid.uuid4())
 
-            invalid_chars = '\\/:*?"<>|'
-            for x in invalid_chars:
-                file_name = file_name.replace(x, '')
-
-            file_name = os.path.join(self.base, file_name) if not temp_base else \
-                os.path.join(temp_base, file_name)
-            file_name_part = file_name + '.part'
+            file_name = self._get_filename(item=item, temp_base=temp_base)
 
             download_url = item.download_url
             log_d("Download url:{}".format(download_url))
 
             self.active_items.append(item)
 
-            if self._browser_session:
-                r = self._browser_session.get(download_url, stream=True)
+            if isinstance(item.download_url, list):
+                # NOTE: file_name will be used as folder name when multiple url.
+                item = self._download_item_with_multiple_dl_url(
+                    item=item, folder=file_name, interrupt_state=interrupt)
             else:
-                r = requests.get(download_url, stream=True)
-            try:
-                item.total_size = int(r.headers['content-length'])
-            except KeyError:
-                item.total_size = 0
+                item = self._download_item_with_single_dl_url(
+                    item=item, filename=file_name, interrupt_state=interrupt)
 
-            with open(file_name_part, 'wb') as f:
-                for data in r.iter_content(chunk_size=1024):
-                    if item.current_state == item.CANCELLED:
-                        interrupt = True
-                        break
-                    if data:
-                        item.current_size += len(data)
-                        f.write(data)
-                        f.flush()
-            if not interrupt:
-                try:
-                    os.rename(file_name_part, file_name)
-                except OSError:
-                    n = 0
-                    file_split = os.path.split(file_name)
-                    while n < 100:
-                        try:
-                            if file_split[1]:
-                                os.rename(file_name_part,
-                                            os.path.join(file_split[0],"({}){}".format(n, file_split[1])))
-                            else:
-                                os.rename(file_name_part, "({}){}".format(n, file_name))
-                            break
-                        except:
-                            n += 1
-                    if n > 100:
-                        file_name = file_name_part
-
-                item.file = file_name
-                item.current_state = item.FINISHED
-                item.file_rdy.emit(item)
-                self.item_finished.emit(item)
-            else:
-                try:
-                    os.remove(file_name_part)
-                except:
-                    pass
             log_d("Items in queue {}".format(self._inc_queue.empty()))
             log_d("Finished downloading: {}".format(download_url))
             self.active_items.remove(item)
@@ -188,7 +581,7 @@ class Downloader(QObject):
             self._threads.append(thread)
 
 class HenItem(DownloaderItem):
-    "A convenience class that most methods in DLManager and it's subclasses returns"
+    "A convenience class that most methods in DLManager and its subclasses returns"
     thumb_rdy = pyqtSignal(object)
     def __init__(self, session=None):
         super().__init__(session=session)
@@ -199,7 +592,7 @@ class HenItem(DownloaderItem):
         self.metadata = {}
         self.gallery_name = ""
         self.gallery_url = ""
-        self.download_type = app_constants.HEN_DOWNLOAD_TYPE
+        self.download_type = app_constants.DOWNLOAD_TYPE_OTHER
         self.torrents_found = 0
         self.file_rdy.connect(self.check_type)
 
@@ -212,7 +605,7 @@ class HenItem(DownloaderItem):
         self._thumb_item.file_rdy.connect(thumb_fetched)
 
     def check_type(self):
-        if self.download_type == 1:
+        if self.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             utils.open_torrent(self.file)
 
     def update_metadata(self, key, value):
@@ -260,15 +653,9 @@ class DLManager(QObject):
     _browser = RoboBrowser(history=True,
                         user_agent="Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
                         parser='html.parser', allow_redirects=False)
-    # download type
-    ARCHIVE, TORRENT = False, False
-    def __init__(self):
+    def __init__(self, download_type=app_constants.DOWNLOAD_TYPE_OTHER):
         super().__init__()
-        self.ARCHIVE, self.TORRENT = False, False
-        if app_constants.HEN_DOWNLOAD_TYPE == 0:
-            self.ARCHIVE = True
-        elif app_constants.HEN_DOWNLOAD_TYPE == 1:
-            self.TORRENT = True
+        self._download_type = download_type
 
     def _error(self):
         pass
@@ -276,11 +663,11 @@ class DLManager(QObject):
     def from_gallery_url(self, url):
         """
         Needs to be implemented in site-specific subclass
-        URL checking  and class instantiating is done in GalleryDownloader class in io_misc.py
+        URL checking and class instantiating is done in GalleryDownloader class in io_misc.py
         Basic procedure for this method:
         - open url with self._browser and do the parsing
-        - create HenItem and fill out it's attributes
-        - specify download type (important)... 0 for archive and 1 for torrent 2 for other
+        - create HenItem and fill out its attributes
+        - specify download type (important) from app_constants
         - fetch optional thumbnail on HenItem
         - set download url on HenItem (important)
         - add h_item to download queue
@@ -293,6 +680,22 @@ class DLManager(QObject):
         """
         raise NotImplementedError
 
+    def ensure_browser_on_url(self, url):
+        """open browser on input url if not already.
+
+        Args:
+            url: Url where browser to open (or alreadery opened)
+        """
+        open_url = False  # assume not opening the url
+        try:
+            current_url = self._browser.url
+            if current_url != url:
+                open_url = True
+        except RoboError:
+            open_url = True
+        if open_url:
+            self._browser.open(url)
+
 class ChaikaManager(DLManager):
     "panda.chaika.moe manager"
 
@@ -303,7 +706,7 @@ class ChaikaManager(DLManager):
 
     def from_gallery_url(self, url):
         h_item = HenItem(self._browser.session)
-        h_item.download_type = 0
+        h_item.download_type = self._download_type
         chaika_id = os.path.split(url)
         if chaika_id[1]:
             chaika_id = chaika_id[1]
@@ -377,6 +780,11 @@ class HenManager(DLManager):
 
     def __init__(self):
         super().__init__()
+        if app_constants.HEN_DOWNLOAD_TYPE:
+            self._download_type = app_constants.DOWNLOAD_TYPE_TORRENT
+        else:
+            self._download_type = app_constants.DOWNLOAD_TYPE_ARCHIVE
+
         self.e_url = 'https://e-hentai.org/'
 
         exprops = settings.ExProperties()
@@ -447,14 +855,19 @@ class HenManager(DLManager):
             return False
         if 'exhentai' in g_url:
             hen = ExHen(settings.ExProperties().cookies)
+            if hen.check_login(hen.cookies) in (0, 1,):
+                raise app_constants.NeedLogin
         else:
             hen = EHen()
+            if not hen.check_login(hen.cookies):
+                raise app_constants.NeedLogin
         log_d("Using {}".format(hen.__repr__()))
         api_metadata, gallery_gid_dict = hen.add_to_queue(g_url, True, False)
         gallery = api_metadata['gmetadata'][0]
         log_d("".format(gallery))
 
         h_item = HenItem(self._browser.session)
+        h_item.download_type = self._download_type
         h_item.gallery_url = g_url
         h_item.metadata = EHen.parse_metadata(api_metadata, gallery_gid_dict)
         try:
@@ -465,9 +878,8 @@ class HenManager(DLManager):
         h_item.gallery_name = gallery['title']
         h_item.size = "{0:.2f} MB".format(gallery['filesize']/1048576)
 
-        if self.ARCHIVE:
+        if self._download_type == app_constants.DOWNLOAD_TYPE_ARCHIVE:
             try:
-                h_item.download_type = 0
                 d_url = self._archive_url_d(gallery['gid'], gallery['token'], gallery['archiver_key'])
 
                 # ex/g.e
@@ -512,8 +924,7 @@ class HenManager(DLManager):
                 log.exception("HTML parsing error")
                 raise app_constants.HTMLParsing
 
-        elif self.TORRENT:
-            h_item.download_type = 1
+        elif self._download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             h_item.torrents_found = int(gallery['torrentcount'])
             h_item.fetch_thumb()
             if  h_item.torrents_found > 0:
@@ -950,10 +1361,9 @@ class EHen(CommenHen):
             }
 
         eh_c = requests.post('https://forums.e-hentai.org/index.php?act=Login&CODE=01', data=p).cookies.get_dict()
-        #exh_c = requests.get('https://exhentai.org', cookies=eh_c).cookies.get_dict()
+        exh_c = requests.get('https://exhentai.org', cookies=eh_c).cookies.get_dict()
 
-        #eh_c.update(exh_c)
-        log_d("EH Cookeis: {}".format(eh_c))
+        eh_c.update(exh_c)
 
         if not cls.check_login(eh_c):
             log_w("EH login failed")

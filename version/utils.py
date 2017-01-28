@@ -1295,3 +1295,12 @@ def timeit(func):
         print('function [{}] finished in {} ms'.format(
             func.__name__, int(elapsedTime * 1000)))
     return newfunc
+
+
+def makedirs_if_not_exists(folder):
+    """Create directory if not exists.
+    Args:
+        folder: Target folder.
+    """
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
