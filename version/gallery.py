@@ -1445,6 +1445,7 @@ class CommonView:
             rows = len(gallery_list)
             view_cls.gallery_model._gallery_to_remove.extend(gallery_list)
             view_cls.gallery_model.removeRows(view_cls.gallery_model.rowCount() - rows, rows)
+            view_cls.sort_model.refresh()
 
             #view_cls.STATUS_BAR_MSG.emit('Gallery removed!')
             #view_cls.setUpdatesEnabled(True)

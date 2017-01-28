@@ -483,11 +483,13 @@ class GalleryDB(DBBase):
         assert isinstance(list_of_gallery, list), "Please provide a valid list of galleries to delete"
         for gallery in list_of_gallery:
             if local:
+                app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(gallery.path))
                 if gallery.is_archive:
                     s = delete_path(gallery.path)
                 else:
-                    for chap in gallery.chapters:
-                        path = chap.path
+                    paths = [x.path for x in gallery.chapters]
+                    [app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(x)) for x in paths] # to avoid data race?
+                    for path in paths:
                         s = delete_path(path)
                         if not s:
                             log_e('Failed to delete chapter {}:{}, {}'.format(chap,
