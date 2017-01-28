@@ -27,6 +27,7 @@ from queue import Queue
 from tempfile import (
     NamedTemporaryFile,
     mkdtemp,
+    mkstemp
 )
 
 from bs4 import BeautifulSoup
@@ -247,19 +248,18 @@ class Downloader(QObject):
 
     @staticmethod
     def _download_with_tempfile(
-            target_file, response, item, interrupt_state,
+            temp_file, target_file, response, item, interrupt_state
     ):
         """Download file with tempfile return changed item and interrupt state.
 
         method used on window taken and modified from http://stackoverflow.com/a/15259358
 
         Args:
-            target_file: Target filename where url will be downloaded.
+            temp_file: Temporary filename where url will be downloaded.
+            target_file: Target filename where downloaded item will be moved/copied to.
             response (requests.Response): Response from url.
             item: Download item.
             interrupt_state (bool): Interrupt state.
-            use_tempfile (bool): Use tempfile when downloading or not.
-
         Returns:
             tuple: (item, interrupt_state) where both variables
                 is the changed variables from input.
@@ -268,36 +268,13 @@ class Downloader(QObject):
         # compatibilty
         DownloaderObject = Downloader
 
-        if app_constants.OS_NAME != 'windows':  # linux and osx only
-            with NamedTemporaryFile() as tempfile:
-                item, interrupt_state = DownloaderObject._download_single_file(
-                    target_file=tempfile.name,
-                    response=response,
-                    item=item,
-                    interrupt_state=interrupt_state,
-                    use_tempfile=False
-                )
-            if item.current_state != item.CANCELLED:
-                shutil.copyfile(tempfile.name, target_file)
-        else:  # window only
-            try:
-                # create temp folder and file
-                temp_dir = mkdtemp()
-                temp_file = os.path.join(temp_dir, os.path.basename(target_file))
-                # process temp file
-                item, interrupt_state = DownloaderObject._download_single_file(
-                    target_file=temp_file,
-                    response=response,
-                    item=item,
-                    interrupt_state=interrupt_state,
-                    use_tempfile=False
-                )
-                # only on correct state, move the downloaded file.
-                if item.current_state != item.CANCELLED:
-                    shutil.move(temp_file, target_file)
-            finally:
-                shutil.rmtree(temp_dir)
-
+        item, interrupt_state = DownloaderObject._download_single_file(
+                target_file=temp_file,
+                response=response,
+                item=item,
+                interrupt_state=interrupt_state,
+                use_tempfile=False
+            )
         return item, interrupt_state
 
 
@@ -345,13 +322,38 @@ class Downloader(QObject):
 
             )
         elif use_tempfile:
-            with NamedTemporaryFile() as tempfile:
+            window_ = app_constants.OS_NAME == 'windows' # window only
+            closed_ = False
+            try:
+                if window_:
+                    file_, tempfile = mkstemp()
+                else:
+                    file_ = NamedTemporaryFile()
+                    tempfile = file_.name
+
                 item, interrupt_state = DownloaderObject._download_with_tempfile(
-                    target_file=tempfile.name,
-                    response=response,
-                    item=item,
-                    interrupt_state=interrupt_state,
-                )
+                        temp_file=tempfile,
+                        target_file=target_file,
+                        response=response,
+                        item=item,
+                        interrupt_state=interrupt_state
+                    )
+
+                if window_:
+                    os.close(file_) # can't access open file d. on windows
+                    closed_ = True
+                    if item.current_state != item.CANCELLED:
+                        shutil.copyfile(tempfile, target_file)
+                    os.remove(tempfile) # responsible for deleting it. Should put this in finally clause
+                else:
+                    if item.current_state != item.CANCELLED:
+                        shutil.copyfile(temp_ile, target_file)
+                    file_.close() # file will be deleted when closed
+                    closed_ = True
+
+            finally:
+                if not closed_:
+                    os.close(file_) if window_ else file_.close()
         else:
             item, interrupt_state = DownloaderObject._download_with_simple_method(
                 target_file=target_file,

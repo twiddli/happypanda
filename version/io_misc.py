@@ -114,10 +114,10 @@ class GalleryDownloaderItem(QObject):
 
     def done(self):
         self.status_timer.stop()
-        if self.item.download_type == 0:
-            self.status_item.setText("Creating gallery...")
-        else:
+        if self.item.download_type == app_constants.DOWNLOAD_TYPE_TORRENT:
             self.status_item.setText("Sent to torrent client!")
+        else:
+            self.status_item.setText("Creating gallery...")
 
 class GalleryDownloaderList(QTableWidget):
     """
