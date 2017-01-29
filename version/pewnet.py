@@ -1222,7 +1222,7 @@ class EHen(CommenHen):
                 s = requests.Session()
                 s.cookies.update(cookies)
                 s.headers.update(cls.HEADERS)
-                r = cls.handle_error(cls, s.get('https://exhentai.org/'))
+                r = cls.handle_error(cls, s.get('https://exhentai.org/'), wait=False)
                 if r:
                     custom['login'] = 2 # access to ex
                 if r is None:
@@ -1233,18 +1233,20 @@ class EHen(CommenHen):
                 return custom['login']
         return 0 # we've been banned, wrong credentials or haven't signed in
 
-    def handle_error(self, response):
+    def handle_error(self, response, wait=True):
         content_type = response.headers['content-type']
         text = response.text
         if 'image/gif' in content_type:
             app_constants.NOTIF_BAR.add_text('Provided exhentai credentials are incorrect!')
             log_e('Provided exhentai credentials are incorrect!')
-            time.sleep(5)
+            if wait:
+                time.sleep(5)
             return None
         elif 'text/html' and 'Your IP address has been' in text:
             app_constants.NOTIF_BAR.add_text("Your IP address has been temporarily banned from g.e-/exhentai")
             log_e('Your IP address has been temp banned from g.e- and ex-hentai')
-            time.sleep(5)
+            if wait:
+                time.sleep(5)
             return False
         elif 'text/html' in content_type and 'You are opening' in text:
             time.sleep(random.randint(10,50))

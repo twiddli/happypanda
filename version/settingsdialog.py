@@ -859,7 +859,7 @@ class SettingsDialog(QWidget):
         web_metadata_page.setWidget(web_metadata_dummy)
         web_metadata_m_l = QFormLayout(web_metadata_dummy)
         self.default_ehen_url = QRadioButton('e-hentai.org', web_metadata_page)
-        self.exhentai_ehen_url = QRadioButton('exhentai.org', web_metadata_page)
+        self.exhentai_ehen_url = QRadioButton('exhentai.org (login needed)', web_metadata_page)
         ehen_url_l = QHBoxLayout()
         ehen_url_l.addWidget(self.default_ehen_url)
         ehen_url_l.addWidget(self.exhentai_ehen_url, 1)
