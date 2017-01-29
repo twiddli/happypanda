@@ -64,6 +64,7 @@ class AppWindow(QMainWindow):
     "The application's main window"
 
     move_listener = pyqtSignal()
+    login_check_invoker = pyqtSignal()
     db_startup_invoker = pyqtSignal(list)
     duplicate_check_invoker = pyqtSignal(gallery.GalleryModel)
     admin_db_method_invoker = pyqtSignal(object)
@@ -77,6 +78,7 @@ class AppWindow(QMainWindow):
         app_constants.GENERAL_THREAD = QThread(self)
         app_constants.GENERAL_THREAD.finished.connect(app_constants.GENERAL_THREAD.deleteLater)
         app_constants.GENERAL_THREAD.start()
+        self.check_site_logins()
         self._db_startup_thread = QThread(self)
         self._db_startup_thread.finished.connect(self._db_startup_thread.deleteLater)
         self.db_startup = gallerydb.DatabaseStartup()
@@ -98,6 +100,23 @@ class AppWindow(QMainWindow):
         prev_view = QShortcut(QKeySequence(QKeySequence.PreviousChild), self, self.switch_display)
         next_view = QShortcut(QKeySequence(QKeySequence.NextChild), self, self.switch_display)
         help = QShortcut(QKeySequence(QKeySequence.HelpContents), self, lambda:utils.open_web_link("https://github.com/Pewpews/happypanda/wiki"))
+
+    def check_site_logins(self):
+        # checking logins
+        # need to do this to avoid settings dialog locking up
+        class LoginCheck(QObject):
+            def __init__(self):
+                super().__init__()
+            def check(self):
+                for s in settings.ExProperties.sites:
+                    ex = settings.ExProperties(s)
+                    if ex.cookies:
+                        if s == settings.ExProperties.EHENTAI:
+                            pewnet.EHen.check_login(ex.cookies)
+        logincheck = LoginCheck()
+        self.login_check_invoker.connect(logincheck.check)
+        logincheck.moveToThread(app_constants.GENERAL_THREAD)
+        self.login_check_invoker.emit()
 
     def init_watchers(self):
 

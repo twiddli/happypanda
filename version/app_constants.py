@@ -333,6 +333,7 @@ class WrongURL(Exception): pass
 class NeedLogin(Exception): pass
 class WrongLogin(Exception): pass
 class HTMLParsing(Exception): pass
+class GNotAvailable(Exception): pass
 
 EXTERNAL_VIEWER_INFO =\
 	"""{$folder} = path to folder
@@ -370,7 +371,7 @@ SUPPORTED_METADATA_URLS=\
 EXHEN_COOKIE_TUTORIAL =\
 	"""
 How do you find these two values? <br \>
-<b>Firefox/Chrome/Others</b> <br \>
+<b>All browsers</b> <br \>
 1. Navigate to exhentai.org <br \>
 2. Right click --> Inspect element <br \>
 3. Go on 'Console' tab <br \>

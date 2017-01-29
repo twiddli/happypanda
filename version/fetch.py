@@ -356,6 +356,8 @@ class Fetch(QObject):
                 log_i("Using existing gallery url")
                 check = self._website_checker(gallery.link)
                 if check == valid_url:
+                    # convert g.e-h to e-h
+                    gallery.link = pewnet.HenManager.gtoEh(gallery.link)
                     gallery.temp_url = gallery.link
                     checked_pre_url_galleries.append(gallery)
                     if x == len(galleries):
@@ -504,8 +506,8 @@ class Fetch(QObject):
             if 'exhentai' in self._default_ehen_url:
                 try:
                     exprops = settings.ExProperties()
-                    if exprops.check():
-                        hen = pewnet.ExHen(exprops.cookies)
+                    hen = pewnet.ExHen(exprops.cookies)
+                    if hen.check_login(exprops.cookies):
                         valid_url = 'exhen'
                         log_i("using exhen")
                     else:

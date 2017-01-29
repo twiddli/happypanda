@@ -256,10 +256,6 @@ class SettingsDialog(QWidget):
         # Advanced / Misc
         self.external_viewer_args.setText(app_constants.EXTERNAL_VIEWER_ARGS)
         self.force_high_dpi_support.setChecked(app_constants.FORCE_HIGH_DPI_SUPPORT)
-        exprops = settings.ExProperties()
-        c_h = exprops.cookies
-        self.ipbid_edit.setText(c_h.get('ipb_member_id', ''))
-        self.ipbpass_edit.setText(c_h.get('ipb_pass_hash', ''))
 
         # Advanced / Gallery / Gallery Text Fixer
         self.g_data_regex_fix_edit.setText(app_constants.GALLERY_DATA_FIX_REGEX)
@@ -510,14 +506,6 @@ class SettingsDialog(QWidget):
         # Advanced / Misc
         app_constants.EXTERNAL_VIEWER_ARGS = self.external_viewer_args.text()
         set(app_constants.EXTERNAL_VIEWER_ARGS, 'Advanced', 'external viewer args')
-
-        exprops = settings.ExProperties()
-        c_h = exprops.cookies
-        if self.ipbid_edit.text():
-            c_h['ipb_member_id'] = self.ipbid_edit.text()
-        if self.ipbpass_edit.text():
-            c_h['ipb_pass_hash'] = self.ipbpass_edit.text()
-        exprops.save()
 
         # Advanced / Misc / Grid View
         app_constants.SCROLL_SPEED = self.scroll_speed
@@ -792,20 +780,27 @@ class SettingsDialog(QWidget):
             except app_constants.WrongLogin:
                 statuslbl.setText("<font color='red'>Wrong login information!</font>")
         
-        def make_login_forms(layout, exprops, baseHen_class, partial_txt='You have partial access!'):
+        def make_login_forms(layout, exprops, baseHen_class, partial_txt='You have partial access!', info=''):
             status = QLabel(logins_page)
             status.setText("<font color='red'>Not logged in!</font>")
             layout.addRow(status)
             user = QLineEdit(logins_page)
-            layout.addRow("Username:", user)
+            usertxt = 'Username:'
+            passtxt = 'Password:'
+            if baseHen_class == pewnet.EHen:
+                usertxt = 'IPB Member ID:'
+                passtxt = 'IPB Pass Hash:'
+            layout.addRow(usertxt, user)
             passw = QLineEdit(logins_page)
-            layout.addRow("Password:", passw)
+            layout.addRow(passtxt, passw)
             passw.setEchoMode(QLineEdit.Password)
             log_btn = QPushButton("Login")
             b_l = QHBoxLayout()
             b_l.addWidget(Spacer('h'))
             b_l.addWidget(log_btn)
             layout.addRow(b_l)
+            if info:
+                layout.addRow(QLabel(info))
             result = baseHen_class.check_login(exprops.cookies)
             if result == 1:
                 status.setText("<font color='orange'>{}</font>".format(partial_txt))
@@ -826,7 +821,8 @@ class SettingsDialog(QWidget):
         ehentai_group, ehentai_l = groupbox("E-Hentai", QFormLayout, logins_page)
         logins_layout.addRow(ehentai_group)
         ehentai_user, ehentai_pass, ehentai_status = make_login_forms(ehentai_l, exprops(), pewnet.EHen,
-                                                                "You have partial access (e-hentai). Enter details in the Advanced section to access exhentai.")
+                                                                "You have partial access (e-hentai). You do not have access to exhentai.",
+                                                                app_constants.EXHEN_COOKIE_TUTORIAL)
 
         # nhentai
         #nhentai_group, nhentai_l = groupbox("NHentai", QFormLayout, logins_page)
@@ -1140,20 +1136,6 @@ class SettingsDialog(QWidget):
         cache_size_spin_box.setValue(self.cache_size[1])
         cache_size_spin_box.valueChanged[int].connect(cache_size)
         misc_gridview_layout.addRow('Cache Size (MiB):', cache_size_spin_box)
-
-        exhentai_group, exhentai_group_l = groupbox("ExHentai Details", QFormLayout, advanced_misc)
-        misc_controls_layout.addRow(exhentai_group)
-        self.ipbid_edit = QLineEdit()
-        self.ipbpass_edit = QLineEdit()
-        self.ipbpass_edit.setEchoMode(QLineEdit.Password)
-        exh_tutorial = QLabel(app_constants.EXHEN_COOKIE_TUTORIAL)
-        exh_tutorial.setTextFormat(Qt.RichText)
-        exh_info = QLabel("Warning: Only enter these values if you weren't able to gain access to exhentai by logging in at Web->Logins!")
-        exh_info.setWordWrap(True)
-        exhentai_group_l.addRow(exh_info)
-        exhentai_group_l.addRow('IPB Member ID:', self.ipbid_edit)
-        exhentai_group_l.addRow('IPB Pass Hash:', self.ipbpass_edit)
-        exhentai_group_l.addRow(exh_tutorial)
 
         # Advanced / Gallery
         advanced_gallery, advanced_gallery_m_l = new_tab('Gallery', advanced)

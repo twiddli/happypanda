@@ -838,7 +838,8 @@ class HenManager(DLManager):
         except AttributeError:
             raise app_constants.HTMLParsing
 
-    def gtoEh(self, g_url):
+    @staticmethod
+    def gtoEh(g_url):
         "convert g.e-h to e-h"
         if 'g.e-hentai' in g_url:
             g_url = g_url.replace('g.e-hentai', 'e-hentai')
@@ -854,7 +855,7 @@ class HenManager(DLManager):
             return False
         if 'exhentai' in g_url:
             hen = ExHen(settings.ExProperties().cookies)
-            if hen.check_login(hen.cookies) in (0, 1,):
+            if not hen.check_login(hen.cookies) == 2:
                 raise app_constants.NeedLogin
         else:
             hen = EHen()
@@ -863,7 +864,7 @@ class HenManager(DLManager):
         log_d("Using {}".format(hen.__repr__()))
         api_metadata, gallery_gid_dict = hen.add_to_queue(g_url, True, False)
         gallery = api_metadata['gmetadata'][0]
-        log_d("".format(gallery))
+        log_d("EH API:\n\t".format(gallery))
 
         h_item = HenItem(self._browser.session)
         h_item.download_type = self._download_type
@@ -882,8 +883,13 @@ class HenManager(DLManager):
                 d_url = self._archive_url_d(gallery['gid'], gallery['token'], gallery['archiver_key'])
 
                 # ex/g.e
-                self._browser.open(d_url)
                 log_d("Opening {}".format(d_url))
+                self._browser.open(d_url)
+                # check for availability
+                log_d(self._browser.parsed)
+                if 'gallery is currently unavailable' in '{}'.format(self._browser.parsed):
+                    raise app_constants.GNotAvailable
+
                 download_btn = self._browser.get_form()
                 if download_btn:
                     log_d("Parsing download button!")
@@ -1125,9 +1131,10 @@ class NHen(CommenHen):
 class EHen(CommenHen):
     "Fetches galleries from ehen"
     def __init__(self, cookies = None):
-        self.cookies = cookies
+        self.cookies = cookies if cookies else settings.ExProperties().cookies
         self.e_url = "https://e-hentai.org/api.php"
         self.e_url_o = "https://e-hentai.org/"
+
 
     @classmethod
     def apply_metadata(cls, g, data, append = True):
@@ -1204,11 +1211,27 @@ class EHen(CommenHen):
         Checks if user is logged in
         """
         if cookies.get('ipb_member_id') and cookies.get('ipb_pass_hash'):
-            return 2
-        elif cookies.get('ipb_session_id'):
-            return 1
-        else:
-            return 0
+            # check if there is access to ex
+            ex = settings.ExProperties()
+            if ex.custom: # this is to avoid spamming ex with requests
+                return ex.custom.get('login')
+            else:
+                custom = {}
+                custom['login'] = 0
+
+                s = requests.Session()
+                s.cookies.update(cookies)
+                s.headers.update(cls.HEADERS)
+                r = cls.handle_error(cls, s.get('https://exhentai.org/'))
+                if r:
+                    custom['login'] = 2 # access to ex
+                if r is None:
+                    custom['login'] = 1 # we get sadpanda
+
+                ex.custom = custom
+                ex.save()
+                return custom['login']
+        return 0 # we've been banned, wrong credentials or haven't signed in
 
     def handle_error(self, response):
         content_type = response.headers['content-type']
@@ -1217,7 +1240,7 @@ class EHen(CommenHen):
             app_constants.NOTIF_BAR.add_text('Provided exhentai credentials are incorrect!')
             log_e('Provided exhentai credentials are incorrect!')
             time.sleep(5)
-            return False
+            return None
         elif 'text/html' and 'Your IP address has been' in text:
             app_constants.NOTIF_BAR.add_text("Your IP address has been temporarily banned from g.e-/exhentai")
             log_e('Your IP address has been temp banned from g.e- and ex-hentai')
@@ -1350,32 +1373,28 @@ class EHen(CommenHen):
                 if cls.check_login(exprops.cookies):
                     cls.COOKIES.update(exprops.cookies)
                     return cls.COOKIES
-
         p = {
-            'CookieDate': '1',
-            'b':'d',
-            'bt':'1-1', 
-            'UserName':user,
-            'PassWord':password
+            'ipb_member_id':user,
+            'ipb_pass_hash':password
             }
 
-        eh_c = requests.post('https://forums.e-hentai.org/index.php?act=Login&CODE=01', data=p).cookies.get_dict()
-        exh_c = requests.get('https://exhentai.org', cookies=eh_c).cookies.get_dict()
+        s = requests.Session()
+        s.headers.update(cls.HEADERS)
+        s.cookies.update(p)
+        r =  s.get('https://e-hentai.org/')
 
-        eh_c.update(exh_c)
-
-        if not cls.check_login(eh_c):
+        if not cls.check_login(s.cookies):
             log_w("EH login failed")
             raise app_constants.WrongLogin
 
         log_i("EH login succes")
-        exprops.cookies = eh_c
+        exprops.cookies = s.cookies
         exprops.username = user
         exprops.password = password
         exprops.save()
-        cls.COOKIES.update(eh_c)
+        cls.COOKIES.update(s.cookies)
 
-        return eh_c
+        return s.cookies
 
     def search(self, search_string, **kwargs):
         """

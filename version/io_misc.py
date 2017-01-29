@@ -327,7 +327,7 @@ class GalleryDownloader(QWidget):
             log_i('Adding download entry: {}'.format(url))
             manager = self.website_validator(url)
             if isinstance(manager, pewnet.HenManager):
-                url = manager.gtoEh(url)
+                url = pewnet.HenManager.gtoEh(url)
             h_item = manager.from_gallery_url(url)
         except app_constants.WrongURL:
             self.info_lbl.setText("<font color='red'>Failed to add:\n{}</font>".format(url))
@@ -343,6 +343,10 @@ class GalleryDownloader(QWidget):
             return
         except app_constants.WrongLogin:
             self.info_lbl.setText("<font color='red'>Wrong login info to download:\n{}</font>".format(url))
+            self.info_lbl.show()
+            return
+        except app_constants.GNotAvailable:
+            self.info_lbl.setText("<font color='red'>Gallery has been removed:\n{}</font>".format(url))
             self.info_lbl.show()
             return
         if h_item:
@@ -368,7 +372,7 @@ class GalleryDownloader(QWidget):
             manager = pewnet.HenManager()
         elif regex_validate("((exhentai)\.org\/g\/[0-9]+\/[a-z0-9]+)"):
             exprops = settings.ExProperties()
-            if exprops.check():
+            if pewnet.ExHen().check_login(exprops.cookies):
                 manager = pewnet.ExHenManager()
             else:
                 raise app_constants.NeedLogin()
