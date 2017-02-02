@@ -141,6 +141,7 @@ def load_icons():
     global ARROW_RIGHT_ICON
     global ARROW_LEFT_ICON
     global GRID_ICON
+    global GRIDL_ICON
     global SEARCH_ICON
     global CROSS_ICON
     global CROSS_ICON_WH
@@ -151,6 +152,10 @@ def load_icons():
     global SORT_ICON_DESC
     global SORT_ICON_ASC
     global REFRESH_ICON
+    global STAR_ICON
+    global CIRCLE_ICON
+    global INBOX_ICON
+    global SPINNER_ICON
 
     G_LISTS_ICON_WH = qta.icon("fa.bars", color="white")
     G_LISTS_ICON = qta.icon("fa.bars", color="black")
@@ -162,6 +167,7 @@ def load_icons():
     ARROW_RIGHT_ICON = qta.icon("fa.angle-double-right", color="white")
     ARROW_LEFT_ICON = qta.icon("fa.angle-double-left", color="white")
     GRID_ICON = qta.icon("fa.th", color="white")
+    GRIDL_ICON = qta.icon("fa.th-large", color="white")
     SEARCH_ICON = qta.icon("fa.search", color="white")
     CROSS_ICON = qta.icon("fa.times", color="black")
     CROSS_ICON_WH = qta.icon("fa.times", color="white")
@@ -172,6 +178,10 @@ def load_icons():
     SORT_ICON_DESC = qta.icon("fa.sort-amount-desc", color="white")
     SORT_ICON_ASC = qta.icon("fa.sort-amount-asc", color="white")
     REFRESH_ICON = qta.icon("fa.refresh", color="black")
+    STAR_ICON = qta.icon("fa.star", color="white")
+    CIRCLE_ICON = qta.icon("fa.circle", color="white")
+    INBOX_ICON = qta.icon("fa.inbox", color="white")
+    SPINNER_ICON = qta.icon("fa.spinner", color="white")
 
 # image paths
 GALLERY_DEF_ICO_PATH = os.path.join(static_dir, "gallery_def_ico.ico")

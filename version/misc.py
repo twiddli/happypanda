@@ -303,10 +303,7 @@ class ToolbarButton(QPushButton):
     close_tab = pyqtSignal(object)
     def __init__(self, parent=None, txt=''):
         super().__init__(parent)
-        self._text = txt
-        self._font_metrics = self.fontMetrics()
-        if txt:
-            self.setText(txt)
+        self.setText(txt)
         self._selected = False
         self.clicked.connect(lambda: self.select.emit(self))
         self._enable_contextmenu = True
@@ -318,7 +315,6 @@ class ToolbarButton(QPushButton):
     @selected.setter
     def selected(self, b):
         self._selected = b
-        self.update()
 
     def contextMenuEvent(self, event):
         if self._enable_contextmenu:
@@ -328,49 +324,6 @@ class ToolbarButton(QPushButton):
             event.accept()
         else:
             event.ignore()
-
-    def paintEvent(self, event):
-        assert isinstance(event, QPaintEvent)
-        painter = QPainter(self)
-        opt = QStyleOption()
-        opt.initFrom(self)
-        #self.style().drawPrimitive(self.style().PE_FrameButtonTool, opt, painter, self)
-
-        #painter.setPen(QColor(164,164,164,120))
-        #painter.setBrush(Qt.NoBrush)
-        if self._selected:
-            painter.setPen(QColor("#d64933"))
-        #painter.setPen(Qt.NoPen)
-        painter.setRenderHint(painter.Antialiasing)
-        ch_width = self._font_metrics.averageCharWidth() / 2
-        ch_height = self._font_metrics.height()
-        but_rect = QRectF(ch_width, ch_width, self.width() - ch_width * 2, self.height() - ch_width * 2)
-        select_rect = QRectF(0,0, self.width(), self.height())
-
-        painter.drawRoundedRect(but_rect, ch_width,ch_width)
-        txt_to_draw = self._font_metrics.elidedText(self._text,
-                                              Qt.ElideRight, but_rect.width())
-
-        but_center = (but_rect.height() - ch_height) / 2
-        text_rect = QRectF(but_rect.x() + ch_width * 2, but_rect.y() + but_center, but_rect.width(),
-                     but_rect.height())
-        #painter.setPen(QColor('white'))
-        painter.drawText(text_rect, txt_to_draw)
-
-        if self.underMouse():
-            painter.save()
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QBrush(QColor(164,164,164,90)))
-            painter.drawRoundedRect(select_rect, 2,2)
-            painter.restore()
-
-    def setText(self, txt):
-        self._text = txt
-        self.update()
-        super().setText(txt)
-
-    def text(self):
-        return self._text
 
 class TransparentWidget(BaseMoveWidget):
     def __init__(self, parent = None, **kwargs):
@@ -494,6 +447,7 @@ class GalleryMetaWindow(ArrowWindow):
         self.show_animation.setStartValue(0.0)
         self.show_animation.setEndValue(1.0)
         self.setFocusPolicy(Qt.NoFocus)
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
 
     def show(self):
         if not self.hide_animation.Running:
@@ -714,6 +668,7 @@ class GalleryMetaWindow(ArrowWindow):
 
         def __init__(self, parent, appwindow):
             super().__init__(parent)
+            self.setFocusPolicy(Qt.NoFocus)
             self.appwindow = appwindow
             self.setStyleSheet('color:white;')
             main_layout = QHBoxLayout(self)
@@ -2175,6 +2130,10 @@ class LineEdit(QLineEdit):
 
     def contextMenuEvent(self, QContextMenuEvent):
         pass
+
+    def sizeHint(self):
+        s = super().sizeHint()
+        return QSize(400, s.height())
 
 class PathLineEdit(QLineEdit):
     """

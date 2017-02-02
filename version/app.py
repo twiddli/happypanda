@@ -537,10 +537,6 @@ class AppWindow(QMainWindow):
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.toolbar.setIconSize(QSize(20,20))
 
-        spacer_start = QWidget() # aligns the first actions properly
-        spacer_start.setFixedSize(QSize(5, 1))
-        self.toolbar.addWidget(spacer_start)
-
         def switch_view(fav):
             if fav:
                 self.default_manga_view.get_current_view().sort_model.fav_view()
@@ -552,7 +548,7 @@ class AppWindow(QMainWindow):
         self.tab_manager.library_btn.click()
         self.tab_manager.library_btn.clicked.connect(lambda: switch_view(False))
 
-        self.addition_tab = self.tab_manager.addTab("Inbox", app_constants.ViewType.Addition)
+        self.addition_tab = self.tab_manager.addTab("Inbox", app_constants.ViewType.Addition, icon=app_constants.INBOX_ICON)
 
         gallery_k = QKeySequence('Alt+G')
         new_gallery_k = QKeySequence('Ctrl+N')
@@ -590,10 +586,16 @@ class AppWindow(QMainWindow):
         gallery_menu.addAction(populate_action)
         gallery_menu.addSeparator()
         scan_galleries_action = QAction('Scan for new galleries', self)
+        scan_galleries_action.setIcon(app_constants.SPINNER_ICON)
         scan_galleries_action.triggered.connect(self.scan_for_new_galleries)
         scan_galleries_action.setStatusTip('Scan monitored folders for new galleries')
         scan_galleries_action.setShortcut(scan_galleries_k)
         gallery_menu.addAction(scan_galleries_action)
+
+        duplicate_check_simple = QAction("Check for duplicate galleries", self)
+        duplicate_check_simple.setIcon(app_constants.DUPLICATE_ICON)
+        duplicate_check_simple.triggered.connect(lambda: self.duplicate_check()) # triggered emits False
+        gallery_menu.addAction(duplicate_check_simple)
 
         self.toolbar.addWidget(gallery_action)
 
@@ -610,18 +612,11 @@ class AppWindow(QMainWindow):
         self.toolbar.addWidget(metadata_action)
 
         spacer_tool2 = QWidget() 
-        spacer_tool2.setFixedSize(QSize(3, 1))
+        spacer_tool2.setFixedSize(QSize(1, 1))
         self.toolbar.addWidget(spacer_tool2)
 
-        duplicate_check_simple = QToolButton()
-        duplicate_check_simple.setText("Check duplicates")
-        duplicate_check_simple.setIcon(app_constants.DUPLICATE_ICON)
-        duplicate_check_simple.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        duplicate_check_simple.clicked.connect(lambda: self.duplicate_check()) # triggered emits False
-        self.toolbar.addWidget(duplicate_check_simple)
-
         spacer_tool3 = QWidget() 
-        spacer_tool3.setFixedSize(QSize(3, 1))
+        spacer_tool3.setFixedSize(QSize(1, 1))
         self.toolbar.addWidget(spacer_tool3)
         
         gallery_action_random = QToolButton()
@@ -633,7 +628,7 @@ class AppWindow(QMainWindow):
         self.toolbar.addWidget(gallery_action_random)
 
         spacer_tool3 = QWidget() 
-        spacer_tool3.setFixedSize(QSize(5, 1))
+        spacer_tool3.setFixedSize(QSize(1, 1))
         self.toolbar.addWidget(spacer_tool3)
 
         gallery_downloader = QToolButton()
@@ -787,8 +782,8 @@ class AppWindow(QMainWindow):
         if not app_constants.SEARCH_ON_ENTER:
             self.search_bar.textEdited.connect(lambda: self.search_timer.start(800))
         self.search_bar.setPlaceholderText("Search title, artist, namespace & tags")
-        self.search_bar.setMinimumWidth(400)
-        self.search_bar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.search_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.search_bar.setBaseSize(400, 0)
         self.manga_list_view.sort_model.HISTORY_SEARCH_TERM.connect(lambda a: self.search_bar.setText(a))
         self.toolbar.addWidget(self.search_bar)
 
@@ -829,9 +824,6 @@ class AppWindow(QMainWindow):
         settings_act.clicked.connect(self.settings)
         self.toolbar.addWidget(settings_act)
 
-        spacer_end2 = QWidget() # aligns About action properly
-        spacer_end2.setFixedSize(QSize(5, 1))
-        self.toolbar.addWidget(spacer_end2)
         self.addToolBar(self.toolbar)
 
     def get_current_view(self):
