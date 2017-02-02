@@ -1627,7 +1627,7 @@ class Gallery:
                     return True
             else:
                 if app_constants.DEBUG:
-                    print(tag, term)
+                    log_d("{} {}".format(tag, term))
                 if utils.search_term(tag, term, args):
                     return True
             return False

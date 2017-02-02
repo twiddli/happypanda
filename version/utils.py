@@ -1304,3 +1304,19 @@ def makedirs_if_not_exists(folder):
     """
     if not os.path.isdir(folder):
         os.makedirs(folder)
+
+def lookup_tag(tag):
+    "Issues a tag lookup on preferred site"
+    assert isinstance(tag, str), "str not " + str(type(tag))
+    # remove whitespace at edges and replace whitespace with +
+    tag = tag.strip().lower().replace(' ', '+')
+    url = app_constants.DEFAULT_EHEN_URL
+    if not url.endswith('/'):
+        url += '/'
+
+    if not ':' in tag:
+        tag = 'misc:' + tag
+
+    url += 'tag/' + tag
+
+    open_web_link(url)

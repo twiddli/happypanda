@@ -200,6 +200,13 @@ class AppWindow(QMainWindow):
         elif app_constants.FIRST_TIME_LEVEL < app_constants.INTERNAL_LEVEL:
             log_i('Invoking first time level {}'.format(app_constants.INTERNAL_LEVEL))
             app_constants.INTERNAL_LEVEL = 8
+
+            # reset default hen
+            settings.set('https://e-hentai.org/', 'Web', 'default ehen url')
+            settings.save()
+
+            # rebuild database
+
             app_widget = misc.AppDialog(self)
             app_widget.note_info.setText("<font color='red'>IMPORTANT:</font> Application restart is required when done")
             app_widget.restart_info.hide()

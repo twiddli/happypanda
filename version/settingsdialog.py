@@ -180,7 +180,7 @@ class SettingsDialog(QWidget):
             self.add_ignore_path(path)
 
         # Web / metadata
-        if 'g.e-hentai' in app_constants.DEFAULT_EHEN_URL:
+        if 'e-hentai' in app_constants.DEFAULT_EHEN_URL:
             self.default_ehen_url.setChecked(True)
         else:
             self.exhentai_ehen_url.setChecked(True)
@@ -378,9 +378,9 @@ class SettingsDialog(QWidget):
 
         # Web / Metdata
         if self.default_ehen_url.isChecked():
-            app_constants.DEFAULT_EHEN_URL = 'http://g.e-hentai.org/'
+            app_constants.DEFAULT_EHEN_URL = 'https://e-hentai.org/'
         else:
-            app_constants.DEFAULT_EHEN_URL = 'http://exhentai.org/'
+            app_constants.DEFAULT_EHEN_URL = 'https://exhentai.org/'
         set(app_constants.DEFAULT_EHEN_URL, 'Web', 'default ehen url')
 
         app_constants.INCLUDE_EH_EXPUNGED = self.include_expunged.isChecked()

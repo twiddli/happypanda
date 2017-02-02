@@ -222,7 +222,7 @@ HASH_GALLERY_PAGES = get('all', 'Advanced', 'hash gallery pages', int, str)
 INCLUDE_EH_EXPUNGED = get(False, 'Web', 'include eh expunged', bool)
 GLOBAL_EHEN_TIME = get(5, 'Web', 'global ehen time offset', int)
 GLOBAL_EHEN_LOCK = False
-DEFAULT_EHEN_URL = get('http://g.e-hentai.org/', 'Web', 'default ehen url', str)
+DEFAULT_EHEN_URL = get('https://e-hentai.org/', 'Web', 'default ehen url', str)
 REPLACE_METADATA = get(False, 'Web', 'replace metadata', bool)
 ALWAYS_CHOOSE_FIRST_HIT = get(False, 'Web', 'always choose first hit', bool)
 USE_GALLERY_LINK = get(True, 'Web', 'use gallery link', bool)
@@ -343,14 +343,16 @@ Tip: IrfanView uses {$file}
 	"""
 
 WHAT_IS_FILTER =\
-	"""Filters are basically predefined gallery search terms.
+	"""[FILTER]
+Filters are basically predefined gallery search terms.
 Every time a gallery matches the specific filter it gets automatically added to the list!
 
 Filter works the same way a gallery search does so make sure to read the guide in
 Settings -> About -> Search Guide.
 You can write any valid gallery search term.
 
-Enabling Enforce will only allow galleries matching the specified filter in the ist.
+[ENFORCE]
+With Enforce enabled the list will only allow galleries that match the specified filter into the list.
 """
 
 SUPPORTED_DOWNLOAD_URLS=\
@@ -370,10 +372,10 @@ SUPPORTED_METADATA_URLS=\
 
 EXHEN_COOKIE_TUTORIAL =\
 	"""
-How do you find these two values? <br \>
+How do I find these two values? <br \>
 <b>All browsers</b> <br \>
-1. Navigate to exhentai.org <br \>
-2. Right click --> Inspect element <br \>
+1. Navigate to e-hentai.org (needs to be logged in) or exhentai.org <br \>
+2. Right click on page --> Inspect element <br \>
 3. Go on 'Console' tab <br \>
 4. Write : 'document.cookie' <br \>
 5. A line of values should appear that correspond to active cookies <br \>

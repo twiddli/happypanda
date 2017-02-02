@@ -744,7 +744,7 @@ class GalleryMetaWindow(ArrowWindow):
             self.left_layout.addRow(self.g_title_lbl)
             self.g_artist_lbl = ClickedLabel()
             self.g_artist_lbl.setWordWrap(True)
-            self.g_artist_lbl.clicked.connect(lambda a: appwindow.search("artist:{}".format(a)))
+            self.g_artist_lbl.clicked.connect(lambda a: appwindow.search('artist:"{}"'.format(a)))
             self.g_artist_lbl.setStyleSheet('color:#bdc3c7;')
             self.g_artist_lbl.setToolTip("Click to see more from this artist")
             self.left_layout.addRow(self.g_artist_lbl)
@@ -755,10 +755,10 @@ class GalleryMetaWindow(ArrowWindow):
             first_layout = QHBoxLayout()
             self.g_type_lbl = ClickedLabel()
             self.g_type_lbl.setStyleSheet('text-decoration: underline')
-            self.g_type_lbl.clicked.connect(lambda a: appwindow.search("type:{}".format(a)))
+            self.g_type_lbl.clicked.connect(lambda a: appwindow.search('type:"{}"'.format(a)))
             self.g_lang_lbl = ClickedLabel()
             self.g_lang_lbl.setStyleSheet('text-decoration: underline')
-            self.g_lang_lbl.clicked.connect(lambda a: appwindow.search("language:{}".format(a)))
+            self.g_lang_lbl.clicked.connect(lambda a: appwindow.search('language:"{}"'.format(a)))
             self.g_chapters_lbl = TagText('Chapters')
             self.g_chapters_lbl.clicked.connect(lambda: stacked_l.setCurrentIndex(self.chap_index))
             self.g_chap_count_lbl = QLabel()
@@ -830,7 +830,7 @@ class GalleryMetaWindow(ArrowWindow):
                 self.g_pub_lbl.setText(gallery.pub_date.strftime('%d %b %Y'))
             else:
                 self.g_pub_lbl.setText('Unknown')
-            last_read_txt = '{} ago'.format(utils.get_date_age(gallery.last_read)) if gallery.last_read else "Never!"
+            last_read_txt = '{} ago'.format(utils.get_date_age(gallery.last_read)) if gallery.last_read else "Unknown"
             self.g_last_read_lbl.setText(last_read_txt)
             self.g_read_count_lbl.setText('Read {} times'.format(gallery.times_read))
             self.g_info_lbl.setText(gallery.info)
@@ -1075,6 +1075,12 @@ class GalleryMenu(QMenu):
             add_to_ignore = self.addAction('Ignore and remove',
                                   self.add_to_ignore)
         self.addSeparator()
+        rating = self.addAction('Set rating')
+        rating_menu = QMenu(self)
+        rating.setMenu(rating_menu)
+        for x in range(0, 6):
+            rating_menu.addAction('{}'.format(x), functools.partial(self.set_rating, x))
+        self.addSeparator()
         if not self.selected and isinstance(view, QTableView):
             chapters_menu = self.addAction('Chapters')
             open_chapters = QMenu(self)
@@ -1098,21 +1104,34 @@ class GalleryMenu(QMenu):
                 for g_list in sorted(app_constants.GALLERY_LISTS):
                     add_to_list_menu.addAction(g_list.name, functools.partial(self.add_to_list, g_list))
         self.addSeparator()
+        web_menu_act = self.addAction('Web')
+        web_menu = QMenu(self)
+        web_menu_act.setMenu(web_menu)
+
         if not self.selected:
-            get_metadata = self.addAction('Fetch metadata',
+            get_metadata = web_menu.addAction('Fetch metadata',
                                     lambda: self.parent_widget.get_metadata(index.data(Qt.UserRole + 1)))
         else:
             gals = []
             for idx in self.selected:
                 gals.append(idx.data(Qt.UserRole + 1))
-            get_select_metadata = self.addAction('Fetch metadata for selected',
+            get_select_metadata = web_menu.addAction('Fetch metadata for selected',
                                         lambda: self.parent_widget.get_metadata(gals))
+
+        web_menu.addSeparator()
+
+        if self.index.data(Qt.UserRole + 1).link and not self.selected:
+            op_link = web_menu.addAction('Open URL', self.op_link)
+            web_menu.addSeparator()
+        if self.selected and all([idx.data(Qt.UserRole + 1).link for idx in self.selected]):
+            op_links = web_menu.addAction('Open URLs', lambda: self.op_link(True))
+            web_menu.addSeparator()
+
+
+        artist_lookup = web_menu.addAction("Lookup Artists" if self.selected else "Lookup Artist", lambda: self.lookup_web("artist"))
+
         self.addSeparator()
-        rating = self.addAction('Set rating')
-        rating_menu = QMenu(self)
-        rating.setMenu(rating_menu)
-        for x in range(0, 6):
-            rating_menu.addAction('{}'.format(x), functools.partial(self.set_rating, x))
+
         edit = self.addAction('Edit', lambda: self.edit_gallery.emit(self.parent_widget,
                                             self.index.data(Qt.UserRole + 1) if not self.selected else [idx.data(Qt.UserRole + 1) for idx in self.selected]))
         
@@ -1127,10 +1146,6 @@ class GalleryMenu(QMenu):
             op_folder_select = self.addAction('Open {}'.format(text), lambda: self.op_folder(True))
             op_cont_folder_select = self.addAction('Show in folders', lambda: self.op_folder(True, True))
 
-        if self.index.data(Qt.UserRole + 1).link and not self.selected:
-            op_link = self.addAction('Open URL', self.op_link)
-        if self.selected and all([idx.data(Qt.UserRole + 1).link for idx in self.selected]):
-            op_links = self.addAction('Open URLs', lambda: self.op_link(True))
 
         remove_act = self.addAction('Remove')
         remove_menu = QMenu(self)
@@ -1182,6 +1197,17 @@ class GalleryMenu(QMenu):
         else:
             allow_metadata_txt = "Include in 'Fetch all metadata'" if self.allow_metadata_exed else "Exclude in 'Fetch all metadata'"
         adv_menu.addAction(allow_metadata_txt, self.allow_metadata_fetch)
+
+    def lookup_web(self, txt):
+        tag = []
+        if txt == 'artist':
+            if self.selected:
+                for i in self.selected:
+                    tag.append('artist:' + i.data(Qt.UserRole + 2).strip())
+            else:
+                tag.append('artist:' + self.index.data(Qt.UserRole + 2).strip())
+
+        [utils.lookup_tag(t) for t in tag]
 
     def set_rating(self, x):
 
@@ -1383,9 +1409,22 @@ class TagText(QPushButton):
         super().__init__(*args, **kwargs)
         if self.search_widget:
             if self.namespace:
-                self.clicked.connect(lambda: self.search_widget.search('{}:{}'.format(self.namespace, self.text())))
+                self.clicked.connect(lambda: self.search_widget.search('"{}":"{}"'.format(self.namespace, self.text())))
             else:
-                self.clicked.connect(lambda: self.search_widget.search('{}'.format(self.text())))
+                self.clicked.connect(lambda: self.search_widget.search('"{}"'.format(self.text())))
+
+    def mousePressEvent(self, ev):
+        assert isinstance(ev, QMouseEvent)
+        if ev.button() == Qt.RightButton:
+            if self.search_widget:
+                menu = QMenu(self)
+                menu.addAction("Lookup tag",
+                               lambda: utils.lookup_tag(
+                                   self.text() if not self.namespace else '{}:{}'.format(self.namespace, self.text())))
+                menu.exec(ev.globalPos())
+
+        return super().mousePressEvent(ev)
+
 
     def enterEvent(self, event):
         if self.text():
