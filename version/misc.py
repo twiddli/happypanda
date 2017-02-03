@@ -1152,6 +1152,7 @@ class GalleryMenu(QMenu):
         else:
             allow_metadata_txt = "Include in 'Fetch all metadata'" if self.allow_metadata_exed else "Exclude in 'Fetch all metadata'"
         adv_menu.addAction(allow_metadata_txt, self.allow_metadata_fetch)
+        adv_menu.addAction("Reset read count", self.reset_read_count)
 
     def lookup_web(self, txt):
         tag = []
@@ -1221,6 +1222,16 @@ class GalleryMenu(QMenu):
         else:
             self.gallery.exed = exed
             gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, self.gallery.id, {'exed':exed})
+
+    def reset_read_count(self):
+        if self.selected:
+            for idx in self.selected:
+                g = idx.data(Qt.UserRole + 1)
+                g.times_read = 0
+                gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, g.id, {'times_read':0})
+        else:
+            self.gallery.times_read = 0
+            gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, self.gallery.id, {'times_read':0})
 
     def add_to_list(self, g_list):
         galleries = []
