@@ -614,10 +614,6 @@ class AppWindow(QMainWindow):
         spacer_tool2 = QWidget() 
         spacer_tool2.setFixedSize(QSize(1, 1))
         self.toolbar.addWidget(spacer_tool2)
-
-        spacer_tool3 = QWidget() 
-        spacer_tool3.setFixedSize(QSize(1, 1))
-        self.toolbar.addWidget(spacer_tool3)
         
         gallery_action_random = QToolButton()
         gallery_action_random.setText("Open random gallery")
@@ -638,6 +634,10 @@ class AppWindow(QMainWindow):
         gallery_downloader.setShortcut(gallery_downloader_k)
         gallery_downloader.setIcon(app_constants.MANAGER_ICON)
         self.toolbar.addWidget(gallery_downloader)
+
+        spacer_tool4 = QWidget() 
+        spacer_tool4.setFixedSize(QSize(5, 1))
+        self.toolbar.addWidget(spacer_tool4)
 
         # debug specfic code
         if app_constants.DEBUG:
@@ -783,7 +783,6 @@ class AppWindow(QMainWindow):
             self.search_bar.textEdited.connect(lambda: self.search_timer.start(800))
         self.search_bar.setPlaceholderText("Search title, artist, namespace & tags")
         self.search_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.search_bar.setBaseSize(400, 0)
         self.manga_list_view.sort_model.HISTORY_SEARCH_TERM.connect(lambda a: self.search_bar.setText(a))
         self.toolbar.addWidget(self.search_bar)
 
