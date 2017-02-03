@@ -248,13 +248,13 @@ class SortMenu(QMenu):
 
         self.addAction(asc_desc_act)
         self.addSeparator()
-        self.addAction(s_title)
         self.addAction(s_artist)
         self.addAction(s_date)
         self.addAction(s_pub_d)
-        self.addAction(s_times_read)
         self.addAction(s_last_read)
+        self.addAction(s_title)
         self.addAction(s_rating)
+        self.addAction(s_times_read)
 
         self.set_current_sort()
 

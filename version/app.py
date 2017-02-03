@@ -371,7 +371,7 @@ class AppWindow(QMainWindow):
                 else:
                     galleries = self.current_manga_view.gallery_model._data
                 if not galleries:
-                    self.notification_bar.add_text('Looks like we\'ve already gone through all galleries!')
+                    self.notification_bar.add_text('All galleries has already been processed!')
                     return None
             fetch_instance.galleries = galleries
 
@@ -642,8 +642,7 @@ class AppWindow(QMainWindow):
         # debug specfic code
         if app_constants.DEBUG:
             def debug_func():
-                print(self.current_manga_view.gallery_model.rowCount())
-                print(self.current_manga_view.sort_model.rowCount())
+                pass
         
             debug_btn = QToolButton()
             debug_btn.setText("DEBUG BUTTON")
@@ -1206,11 +1205,16 @@ class AppWindow(QMainWindow):
         self.duplicate_check_invoker.emit(self.default_manga_view.gallery_model)
 
     def excepthook(self, ex_type, ex, tb):
-        w = misc.AppDialog(self, misc.AppDialog.MESSAGE)
-        w.show()
         log_c(''.join(traceback.format_tb(tb)))
         log_c('{}: {}'.format(ex_type, ex))
         traceback.print_exception(ex_type, ex, tb)
+        w = QMessageBox(self)
+        w.setWindowTitle("Critical Error")
+        w.setIcon(QMessageBox.Critical)
+        w.setText('A critical error has ben encountered. Stability from this point onward cannot be guaranteed.')
+        w.setStandardButtons(QMessageBox.Ok)
+        w.setDefaultButton(QMessageBox.Ok)
+        w.exec_()
 
     def closeEvent(self, event):
         r_code = self.cleanup_exit()
