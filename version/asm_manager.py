@@ -140,6 +140,9 @@ class AsmManager(DLManagerObject):
         unlike set_metadata method, This will update metadata based on required metadata in
         Ehen.apply_method.
 
+        It also use ehen keys if rather than the defined key in asm for better merging with
+        ehen data. (i.e. use 'Artist' instead of 'Artists').
+
         Args:
             h_item (hen_item.HenItem): Item.
             dict_metadata (dict): Metadata source.
@@ -147,9 +150,13 @@ class AsmManager(DLManagerObject):
         Returns:
             Updated h_item
         """
+        # hardcoded asm to ehen dict
+        e2a_keys = {'Artists': 'Artist', 'Languages': 'Language', 'Characters': 'Character'}
         new_data_tags = {}
         for tag in dict_metadata['tags']:
             namespace, tag_value = tag.split(':', 1)
+            if namespace in e2a_keys:
+                namespace = e2a_keys[namespace]
             new_data_tags.setdefault(namespace, []).append(tag_value)
         new_data = {
             'title': {
