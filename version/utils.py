@@ -942,7 +942,10 @@ def title_parser(title):
     try:
         a = regex.findall('((?<=\[) *[^\]]+( +\S+)* *(?=\]))', title)
         assert len(a) != 0
-        artist = a[0][0].strip()
+        try:
+            artist = a[0][0].strip()
+        except IndexError:
+            artist = a[0].strip()
         parsed_title['artist'] = artist
 
         try:

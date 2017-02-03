@@ -179,7 +179,6 @@ class AppWindow(QMainWindow):
                 ml.addLayout(pop.buttons_layout)
                 pop.add_buttons("close")[0].clicked.connect(pop.close)
                 pop.adjustSize()
-                misc.centerWidget(pop, self)
                 pop.show()
 
             if app_constants.ENABLE_MONITOR and \
@@ -191,8 +190,10 @@ class AppWindow(QMainWindow):
 
         eh_url = app_constants.DEFAULT_EHEN_URL
         if 'g.e-h' in eh_url or 'http://' in eh_url: # reset default hen
-            settings.set('https://e-hentai.org/', 'Web', 'default ehen url')
+            eh_url_n = 'https://e-hentai.org/'
+            settings.set(eh_url_n, 'Web', 'default ehen url')
             settings.save()
+            app_constants.DEFAULT_EHEN_URL = eh_url_n
 
         done()
 

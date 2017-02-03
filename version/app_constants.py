@@ -23,7 +23,7 @@ except ImportError:
     from .database import db_constants
 
 # Version number
-vs  = '0.31'
+vs  = '1.0'
 DEBUG = False
 
 OS_NAME = ''
@@ -75,7 +75,7 @@ user_stylesheet_path = ""
 
 INTERNAL_LEVEL = 8
 FIRST_TIME_LEVEL = get(INTERNAL_LEVEL, 'Application', 'first time level', int)
-UPDATE_VERSION = get('0.31', 'Application', 'version', str)
+UPDATE_VERSION = get('0.30', 'Application', 'version', str)
 FORCE_HIGH_DPI_SUPPORT = get(False, 'Advanced', 'force high dpi support', bool)
 
 # sizes
@@ -944,20 +944,6 @@ KEYBOARD_SHORTCUTS_INFO =\
 <tr>
 <td>Toggle gallery menu</td>
 <td><code>Alt+G</code></td>
-<td>same</td>
-<td>same</td>
-<td>same</td>
-</tr>
-<tr>
-<td>Toggle tools menu</td>
-<td><code>Alt+T</code></td>
-<td>same</td>
-<td>same</td>
-<td>same</td>
-</tr>
-<tr>
-<td>Toggle sort menu</td>
-<td><code>Alt+S</code></td>
 <td>same</td>
 <td>same</td>
 <td>same</td>
