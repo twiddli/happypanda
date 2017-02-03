@@ -146,7 +146,7 @@ class Fetch(QObject):
                                 for g in archive_g:
                                     chap = new_gallery.chapters.create_chapter()
                                     chap.in_archive = 1
-                                    chap.title = utils.title_parser(g)['title']
+                                    chap.title = parsed['title'] if not g else utils.title_parser(g.replace('/', ''))['title']
                                     chap.path = g
                                     metafile.update(utils.GMetafile(g, temp_p))
                                     arch = utils.ArchiveFile(temp_p)
@@ -172,6 +172,10 @@ class Fetch(QObject):
                 except app_constants.CreateArchiveFail:
                     log_w('Skipped {} in local search'.format(path.encode(errors='ignore')))
                     self.skipped_paths.append((temp_p, 'Error creating archive',))
+                    return
+                except app_constants.TitleParsingError:
+                    log_w('Skipped {} in local search'.format(path.encode(errors='ignore')))
+                    self.skipped_paths.append((temp_p, 'Error while parsing folder/archive name',))
                     return
 
             new_gallery.title = parsed['title']

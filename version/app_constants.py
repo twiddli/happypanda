@@ -344,6 +344,7 @@ class NeedLogin(Exception): pass
 class WrongLogin(Exception): pass
 class HTMLParsing(Exception): pass
 class GNotAvailable(Exception): pass
+class TitleParsingError(Exception): pass
 
 EXTERNAL_VIEWER_INFO =\
 	"""{$folder} = path to folder

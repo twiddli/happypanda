@@ -749,6 +749,7 @@ class AppWindow(QMainWindow):
             completer.setCompletionRole(Qt.DisplayRole)
             completer.setCompletionColumn(app_constants.TITLE)
             completer.setFilterMode(Qt.MatchContains)
+            completer.activated[str].connect(lambda a: self.search(a))
             self.search_bar.setCompleter(completer)
             self.search_bar.returnPressed.connect(lambda: self.search(self.search_bar.text()))
         if not app_constants.SEARCH_ON_ENTER:
