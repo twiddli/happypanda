@@ -20,9 +20,9 @@ This is a cross platform manga/doujinshi manager with namespace & tag support.
 \* Gallery downloading from E-Hentai costs Credits/GP
 
 # Screenshots
-<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot1.png" width="700">
-<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot2.png" width="700">
-<img src="https://raw.githubusercontent.com/Pewpews/happypanda/master/misc/screenshot3.png" width="700">
+<img src="https://github.com/Pewpews/happypanda/blob/master/misc/screenshot1.png" width="700">
+<img src="https://github.com/Pewpews/happypanda/blob/master/misc/screenshot2.png" width="700">
+<img src="https://github.com/Pewpews/happypanda/blob/master/misc/screenshot3.png" width="700">
 
 # How to install and run
 #### Windows
