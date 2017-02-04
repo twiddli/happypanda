@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem, QWidget,
                              QListWidget, QHBoxLayout, QPushButton, QStackedLayout,
                              QFrame, QSizePolicy, QListView, QFormLayout, QLineEdit,
                              QLabel, QStyledItemDelegate, QStyleOptionViewItem,
-                             QCheckBox, QButtonGroup)
+                             QCheckBox, QButtonGroup, QPlainTextEdit)
 from PyQt5.QtCore import (Qt, QTimer, pyqtSignal, QRect, QSize, QEasingCurve,
                           QSortFilterProxyModel, QIdentityProxyModel, QModelIndex,
                           QPointF, QRectF, QObject)
@@ -48,10 +48,13 @@ class ToolbarTabManager(QObject):
         self._last_selected = None
         self.idx_widget = self.toolbar.addWidget(QWidget(self.toolbar))
         self.idx_widget.setVisible(False)
+
+        self.agroup = QButtonGroup(self)
+        self.agroup.setExclusive(True)
+
         self.library_btn = None
-        self.favorite_btn = self.addTab("Favorites", delegate_paint=False)
-        self.library_btn = self.addTab("Library", delegate_paint=False)
-        self.toolbar.addSeparator()
+        self.favorite_btn = self.addTab("Favorites", delegate_paint=False, icon=app_constants.STAR_ICON)
+        self.library_btn = self.addTab("Library", delegate_paint=False, icon=app_constants.GRIDL_ICON)
         self.idx_widget = self.toolbar.addWidget(QWidget(self.toolbar))
         self.idx_widget.setVisible(False)
         self.toolbar.addSeparator()
@@ -71,9 +74,15 @@ class ToolbarTabManager(QObject):
         b.view.list_view.sort_model.rowsRemoved.connect(self.parent_widget.stat_row_info)
         b.view.show()
 
-    def addTab(self, name, view_type=app_constants.ViewType.Default, delegate_paint=True, allow_sidebarwidget=False):
+    def addTab(self, name, view_type=app_constants.ViewType.Default, delegate_paint=True, allow_sidebarwidget=False, icon=None):
         if self.toolbar:
             t = misc.ToolbarButton(self.toolbar, name)
+            if icon:
+                t.setIcon(icon)
+            else:
+                t.setIcon(app_constants.CIRCLE_ICON)
+            t.setCheckable(True)
+            self.agroup.addButton(t)
             t.select.connect(self._manage_selected)
             t.close_tab.connect(self.removeTab)
             if self.library_btn:
@@ -114,7 +123,7 @@ class NoTooltipModel(QIdentityProxyModel):
         if role == Qt.ToolTipRole:
             return None
         if role == Qt.DecorationRole:
-            return QPixmap(app_constants.GARTIST_PATH)
+            return app_constants.ARTIST_ICON
         return self.sourceModel().data(index, role)
 
 
@@ -289,13 +298,15 @@ class TagsTreeView(QTreeWidget):
 
 class GalleryListEdit(misc.BasePopup):
     apply = pyqtSignal()
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent, blur=False)
         main_layout = QFormLayout(self.main_widget)
         self.name_edit = QLineEdit(self)
         main_layout.addRow("Name:", self.name_edit)
-        self.filter_edit = QLineEdit(self)
-        what_is_filter = misc.ClickedLabel("What is filter/enforce? (Hover)")
+        self.filter_edit = QPlainTextEdit(self)
+        self.filter_edit.setPlaceholderText("tag1, namespace:tag2, namespace2:[tag1, tag2] ...")
+        self.filter_edit.setFixedHeight(100)
+        what_is_filter = misc.ClickedLabel("What is Filter/Enforce? (Hover)")
         what_is_filter.setToolTip(app_constants.WHAT_IS_FILTER)
         what_is_filter.setToolTipDuration(9999999999)
         self.enforce = QCheckBox(self)
@@ -311,6 +322,9 @@ class GalleryListEdit(misc.BasePopup):
         main_layout.addRow(self.buttons_layout)
         self.add_buttons("Close")[0].clicked.connect(self.hide)
         self.add_buttons("Apply")[0].clicked.connect(self.accept)
+        old_v = self.width()
+        self.adjustSize()
+        self.resize(old_v, self.height())
 
     def set_list(self, gallery_list, item):
         self.gallery_list = gallery_list
@@ -321,17 +335,15 @@ class GalleryListEdit(misc.BasePopup):
         self.strict.setChecked(gallery_list.strict)
         self.item = item
         if gallery_list.filter:
-            self.filter_edit.setText(gallery_list.filter)
+            self.filter_edit.setPlainText(gallery_list.filter)
         else:
-            self.filter_edit.setText('')
-        self.adjustSize()
-        self.setFixedWidth(self.parent_widget.width())
+            self.filter_edit.setPlainText('')
 
     def accept(self):
         name = self.name_edit.text()
         self.item.setText(name)
         self.gallery_list.name = name
-        self.gallery_list.filter = self.filter_edit.text()
+        self.gallery_list.filter = self.filter_edit.toPlainText()
         self.gallery_list.enforce = self.enforce.isChecked()
         self.gallery_list.regex = self.regex.isChecked()
         self.gallery_list.case = self.case.isChecked()
@@ -341,9 +353,9 @@ class GalleryListEdit(misc.BasePopup):
         self.hide()
 
 class GalleryListContextMenu(QMenu):
-    def __init__(self, item, parent):
-        super().__init__(parent)
-        self.parent_widget = parent
+    def __init__(self, item, sidebar):
+        super().__init__(sidebar)
+        self.sidebar_widget = sidebar
         self.item = item
         self.gallery_list = item.item
         edit = self.addAction("Edit", self.edit_list)
@@ -351,17 +363,17 @@ class GalleryListContextMenu(QMenu):
         remove = self.addAction("Delete", self.remove_list)
 
     def edit_list(self):
-        self.parent_widget.gallery_list_edit.set_list(self.gallery_list, self.item)
-        self.parent_widget.gallery_list_edit.show()
+        self.sidebar_widget.gallery_list_edit.set_list(self.gallery_list, self.item)
+        self.sidebar_widget.gallery_list_edit.show()
 
     def remove_list(self):
-        self.parent_widget.takeItem(self.parent_widget.row(self.item))
+        self.sidebar_widget.takeItem(self.sidebar_widget.row(self.item))
         gallerydb.execute(gallerydb.ListDB.remove_list, True, self.gallery_list)
-        self.parent_widget.GALLERY_LIST_REMOVED.emit()
+        self.sidebar_widget.GALLERY_LIST_REMOVED.emit()
 
     def clear_list(self):
         self.gallery_list.clear()
-        self.parent_widget.GALLERY_LIST_CLICKED.emit(self.gallery_list)
+        self.sidebar_widget.GALLERY_LIST_CLICKED.emit(self.gallery_list)
 
 class GalleryLists(QListWidget):
     CREATE_LIST_TYPE = misc.CustomListItem.UserType + 1
@@ -369,9 +381,9 @@ class GalleryLists(QListWidget):
     GALLERY_LIST_REMOVED = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent)
-        self.gallery_list_edit = GalleryListEdit(parent)
+        self.gallery_list_edit = GalleryListEdit(parent.parent_widget)
         self.gallery_list_edit.hide()
-        self._g_list_icon = QIcon(app_constants.GLIST_PATH)
+        self._g_list_icon = app_constants.G_LISTS_ICON
         self._font_selected = QFont(self.font())
         self._font_selected.setBold(True)
         self._font_selected.setUnderline(True)
@@ -405,9 +417,9 @@ class GalleryLists(QListWidget):
 
         g_list_item = self.itemAt(event.pos())
         if galleries and g_list_item:
-            txt = "galleries" if len(galleries) > 1 else "gallery"
-            app_constants.NOTIF_BUBBLE.update_text(g_list_item.item.name, 'Added {} to list...'.format(txt), 5)
-            log_i('Adding gallery to list')
+            txt = "{} galleries".format(len(galleries)) if len(galleries) > 1 else galleries[0].title
+            app_constants.NOTIF_BUBBLE.update_text(g_list_item.item.name, 'Added: {}!'.format(txt), 7)
+            log_i('Added {} to {}...'.format(txt, g_list_item.item.name))
             g_list_item.item.add_gallery(galleries)
 
         super().dropEvent(event)
@@ -431,7 +443,7 @@ class GalleryLists(QListWidget):
         new_item = misc.CustomListItem()
         self._in_proccess_item = new_item
         new_item.setFlags(new_item.flags() | Qt.ItemIsEditable)
-        new_item.setIcon(QIcon(app_constants.LIST_PATH))
+        new_item.setIcon(QIcon(app_constants.LIST_ICON))
         self.insertItem(0, new_item)
         if name:
             new_item.setText(name)
@@ -474,12 +486,12 @@ class SideBarWidget(QFrame):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.parent_widget = parent
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
-        self.parent_widget
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
         self._widget_layout = QHBoxLayout(self)
 
         # widget stuff
         self._d_widget = QWidget(self)
+        self._d_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
         self._widget_layout.addWidget(self._d_widget)
         self.main_layout = QVBoxLayout(self._d_widget)
         self.main_layout.setSpacing(0)
@@ -493,6 +505,7 @@ class SideBarWidget(QFrame):
         self.show_all_galleries_btn = QPushButton("Show all galleries")
         self.show_all_galleries_btn.clicked.connect(lambda:parent.manga_list_view.sort_model.set_gallery_list())
         self.show_all_galleries_btn.clicked.connect(self.show_all_galleries_btn.hide)
+        self.show_all_galleries_btn.setIcon(app_constants.CROSS_ICON_WH)
         self.show_all_galleries_btn.hide()
         self.main_layout.addWidget(self.show_all_galleries_btn)
         self.main_buttons_layout = QHBoxLayout()
@@ -501,13 +514,16 @@ class SideBarWidget(QFrame):
         # buttons
         bgroup = QButtonGroup(self)
         bgroup.setExclusive(True)
-        self.lists_btn = QPushButton("Lists")
+        self.lists_btn = QPushButton("")
+        self.lists_btn.setIcon(app_constants.G_LISTS_ICON_WH)
         self.lists_btn.setCheckable(True)
         bgroup.addButton(self.lists_btn)
-        self.artist_btn = QPushButton("Artists")
+        self.artist_btn = QPushButton("")
+        self.artist_btn.setIcon(app_constants.ARTISTS_ICON)
         self.artist_btn.setCheckable(True)
         bgroup.addButton(self.artist_btn)
-        self.ns_tags_btn = QPushButton("NS && Tags")
+        self.ns_tags_btn = QPushButton("")
+        self.ns_tags_btn.setIcon(app_constants.NSTAGS_ICON)
         self.ns_tags_btn.setCheckable(True)
         bgroup.addButton(self.ns_tags_btn)
         self.lists_btn.setChecked(True)
@@ -525,7 +541,7 @@ class SideBarWidget(QFrame):
         gallery_lists_dummy = QWidget(self)
         self.lists = GalleryLists(self)
         create_new_list_btn = QPushButton()
-        create_new_list_btn.setIcon(QIcon(app_constants.PLUS_PATH))
+        create_new_list_btn.setIcon(QIcon(app_constants.PLUS_ICON))
         create_new_list_btn.setIconSize(QSize(15, 15))
         create_new_list_btn.clicked.connect(lambda: self.lists.create_new_list())
         create_new_list_btn.adjustSize()
@@ -598,7 +614,7 @@ class SideBarWidget(QFrame):
 
     def _init_size(self, event=None):
         h = self.parent_widget.height()
-        self._max_width = 200
+        self._max_width = 250
         self.updateGeometry()
         self.setMaximumWidth(self._max_width)
         self.slide_animation.setStartValue(QSize(self._max_width, h))

@@ -45,6 +45,7 @@ from PyQt5.QtWidgets import (QListView, QFrame, QLabel,
                              QWidget, QHeaderView, QTableView, QApplication,
                              QMessageBox, QActionGroup, QScroller, QStackedLayout)
 
+from executors import Executors
 import gallerydb
 import app_constants
 import misc
@@ -173,8 +174,10 @@ class SortFilterModel(QSortFilterProxyModel):
         self._data = app_constants.GALLERY_DATA
         self._search_ready = False
         self.current_term = ''
+        self._history_count = 50
+        self._prev_term = ''
         self.terms_history = []
-        self.current_term_history = 0
+        self.current_term_history = -1
         self.current_gallery_list = None
         self.current_args = []
         self.current_view = self.CAT_VIEW
@@ -238,13 +241,21 @@ class SortFilterModel(QSortFilterProxyModel):
             args = self.current_args
         history = kwargs.pop('history', True)
         if history:
-            if len(self.terms_history) > 10:
-                self.terms_history = self.terms_history[-10:]
-            self.terms_history.append(term)
+            if self._prev_term != term:
+                self._prev_term = term
 
-            self.current_term_history = len(self.terms_history) - 1
-            if self.current_term_history < 0:
-                self.current_term_history = 0
+                # ny path
+                if self.current_term_history != len(self.terms_history) - 1:
+                    self.terms_history = self.terms_history[:self.current_term_history+1]
+
+                if len(self.terms_history) > self._history_count:
+                    self.terms_history = self.terms_history[-self._history_count:]
+                self.terms_history.append(term)
+
+
+                self.current_term_history = len(self.terms_history) - 1
+                if self.current_term_history < 0:
+                    self.current_term_history = 0
 
         self.current_term = term
         if not history:
@@ -414,6 +425,7 @@ class GalleryModel(QAbstractTableModel):
     LAST_READ_ROLE = Qt.UserRole + 7
     TIME_ROLE = Qt.UserRole + 8
     RATING_ROLE = Qt.UserRole + 9
+    RATING_COUNT = Qt.UserRole + 10
 
     ROWCOUNT_CHANGE = pyqtSignal()
     STATUSBAR_MSG = pyqtSignal(str)
@@ -595,6 +607,9 @@ class GalleryModel(QAbstractTableModel):
         if role == self.RATING_ROLE:
             return StarRating(current_gallery.rating)
 
+        if role == self.RATING_COUNT:
+            return current_gallery.rating
+
         return None
 
     def rowCount(self, index=QModelIndex()):
@@ -626,7 +641,7 @@ class GalleryModel(QAbstractTableModel):
             elif section == self._LANGUAGE:
                 return 'Language'
             elif section == self._LINK:
-                return 'Link'
+                return 'URL'
             elif section == self._DESCR:
                 return 'Description'
             elif section == self._DATE_ADDED:
@@ -944,18 +959,14 @@ class GridDelegate(QStyledItemDelegate):
                     painter.fillRect(type_rect, type_color)
                     painter.drawText(type_p.x(), type_p.y() + painter.fontMetrics().height() - 4, gallery.file_type)
                     painter.restore()
-                    
-                star_start_x = type_rect.x()+type_rect.width() if app_constants.DISPLAY_GALLERY_TYPE else x
-                star_width = star_rating.sizeHint().width()
-                star_start_x += ((x+w-star_start_x)-(star_width))/2
-                star_rating.paint(painter,
-                    QRect(star_start_x, type_rect.y(), star_width, type_rect.height()))
+                
 
-                #if app_constants.USE_EXTERNAL_PROG_ICO:
-                #	if self.external_icon and not self.external_icon.isNull():
-                #		self.external_icon.paint(painter, QRect(x+w-30,
-                #		y+app_constants.THUMB_H_SIZE-28, 28, 28))
-
+                if app_constants.DISPLAY_RATING and gallery.rating:
+                    star_start_x = type_rect.x()+type_rect.width() if app_constants.DISPLAY_GALLERY_TYPE else x
+                    star_width = star_rating.sizeHint().width()
+                    star_start_x += ((x+w-star_start_x)-(star_width))/2
+                    star_rating.paint(painter,
+                        QRect(star_start_x, type_rect.y(), star_width, type_rect.height()))
 
             if gallery.state == app_constants.GalleryState.New:
                 painter.save()
@@ -1259,8 +1270,9 @@ class MangaView(QListView):
             self.gallery_model.CUSTOM_STATUS_MSG.emit("Unfavorited")
         else:
             gallery.fav = 1
+            gallery.rating = 5
             #self.model().replaceRows([gallery], index.row(), 1, index)
-            gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, gallery.id, {'fav':1})
+            gallerydb.execute(gallerydb.GalleryDB.modify_gallery, True, gallery.id, {'fav':1, 'rating':5})
             self.gallery_model.CUSTOM_STATUS_MSG.emit("Favorited")
 
     def del_chapter(self, index, chap_numb):
@@ -1305,6 +1317,10 @@ class MangaView(QListView):
                 self.sort_model.setSortRole(GalleryModel.LAST_READ_ROLE)
                 self.sort_model.sort(0, Qt.DescendingOrder)
                 self.current_sort = 'last_read'
+            elif name == 'rating':
+                self.sort_model.setSortRole(GalleryModel.RATING_COUNT)
+                self.sort_model.sort(0, Qt.DescendingOrder)
+                self.current_sort = 'rating'
 
     def contextMenuEvent(self, event):
         CommonView.contextMenuEvent(self, event)
@@ -1429,6 +1445,7 @@ class CommonView:
             rows = len(gallery_list)
             view_cls.gallery_model._gallery_to_remove.extend(gallery_list)
             view_cls.gallery_model.removeRows(view_cls.gallery_model.rowCount() - rows, rows)
+            view_cls.sort_model.refresh()
 
             #view_cls.STATUS_BAR_MSG.emit('Gallery removed!')
             #view_cls.setUpdatesEnabled(True)
@@ -1463,7 +1480,11 @@ class CommonView:
                 chap_numb = random.randint(0, b - 1)
 
         CommonView.scroll_to_index(view_cls, view_cls.sort_model.index(indx.row(), 0))
-        indx.data(Qt.UserRole + 1).chapters[chap_numb].open()
+        try:
+            indx.data(Qt.UserRole + 1).chapters[chap_numb].open()
+        except KeyError:
+            log.exception("Failed to open chapter")
+            return;
 
     @staticmethod
     def scroll_to_index(view_cls, idx, select=True):
@@ -1628,6 +1649,7 @@ class MangaViews:
                 if not gallery.profile:
                     Executors.generate_thumbnail(gallery, on_method=gallery.set_profile)
         self.list_view.gallery_model.insertRows(self.list_view.gallery_model.rowCount(), rows)
+        self.list_view.sort_model.refresh()
         
     def replace_gallery(self, list_of_gallery, db_optimize=True):
         "Replaces the view and DB with given list of gallery, at given position"

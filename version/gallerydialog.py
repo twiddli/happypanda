@@ -14,6 +14,7 @@ import gallerydb
 import fetch
 import misc
 import database
+import settings
 
 log = logging.getLogger(__name__)
 log_i = log.info
@@ -84,7 +85,7 @@ class GalleryDialog(QWidget):
         log_d('GalleryDialog: Create UI: successful')
         self.setLayout(m_l)
         if self._multiple_galleries:
-            self.resize(500, 400)
+            self.resize(500, 480)
         else:
             self.resize(500, 600)
         frect = self.frameGeometry()
@@ -173,10 +174,18 @@ class GalleryDialog(QWidget):
         tags_l.addWidget(tag_info)
         self.tags_edit = add_check(misc.CompleterTextEdit())
         self.tags_edit.setCompleter(misc.GCompleter(self, False, False))
+        self.tags_append = QCheckBox("Append tags", self)
+        self.tags_append.setChecked(False)
+        if not self._multiple_galleries:
+            self.tags_append.hide()
         if self._multiple_galleries:
-            tags_l.addLayout(checkbox_layout(self.tags_edit), 3)
+            self.tags_append.setChecked(app_constants.APPEND_TAGS_GALLERIES)
+            tags_ml = QVBoxLayout()
+            tags_ml.addWidget(self.tags_append)
+            tags_ml.addLayout(checkbox_layout(self.tags_edit), 5)
+            tags_l.addLayout(tags_ml, 3)
         else:
-            tags_l.addWidget(checkbox_layout(self.tags_edit), 3)
+            tags_l.addWidget(checkbox_layout(self.tags_edit), 5)
         self.tags_edit.setPlaceholderText("Press Tab to autocomplete (Ctrl + E to show popup)")
         self.type_box = add_check(QComboBox())
         self.type_box.addItems(app_constants.G_TYPES)
@@ -236,7 +245,7 @@ class GalleryDialog(QWidget):
         gallery_layout.addRow("Status:", checkbox_layout(self.status_box))
         gallery_layout.addRow("Publication Date:", checkbox_layout(self.pub_edit))
         gallery_layout.addRow("Path:", self.path_lbl)
-        gallery_layout.addRow("Link:", link_layout)
+        gallery_layout.addRow("URL:", link_layout)
 
         self.title_edit.setFocus()
 
@@ -519,7 +528,10 @@ class GalleryDialog(QWidget):
                 new_gallery.status = self.status_box.currentText()
                 log_d('Adding gallery status')
             if is_checked(self.tags_edit):
-                new_gallery.tags = utils.tag_to_dict(self.tags_edit.toPlainText())
+                if self.tags_append.isChecked():
+                    new_gallery.tags = utils.tag_to_dict(utils.tag_to_string(new_gallery.tags)+","+ self.tags_edit.toPlainText())
+                else:
+                    new_gallery.tags = utils.tag_to_dict(self.tags_edit.toPlainText())
                 log_d('Adding gallery: tagging to dict')
             if is_checked(self.pub_edit):
                 qpub_d = self.pub_edit.date().toString("ddMMyyyy")
@@ -591,6 +603,8 @@ class GalleryDialog(QWidget):
 
     def accept_edit(self):
         gallerydb.execute(database.db.DBBase.begin, True)
+        app_constants.APPEND_TAGS_GALLERIES = self.tags_append.isChecked()
+        settings.set(app_constants.APPEND_TAGS_GALLERIES, 'Application', 'append tags to gallery')
         for g in self._edit_galleries:
             self.make_gallery(g)
         self.delayed_close()

@@ -20,6 +20,8 @@ setup.py
 .DS_Store
 downloads
 .happypanda
+# pycharm
+.idea/
 
 # User-specific files
 *.suo
@@ -238,3 +240,10 @@ FakesAssemblies/
 /res/sample.png
 *.hpdb
 /plugins
+/compilerconfig.json
+/compilerconfig.json.defaults
+/happypanda.VC.db
+/happypanda.VC.VC.opendb
+/.vs/config/applicationhost.config
+/data/happypanda.db
+/main.spec

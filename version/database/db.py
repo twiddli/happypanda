@@ -24,54 +24,24 @@ log_e = log.error
 log_c = log.critical
 
 def hashes_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS hashes(
-                    hash_id INTEGER PRIMARY KEY,
-                    hash BLOB,
-                    series_id INTEGER,
-                    chapter_id INTEGER,
-                    page INTEGER,
-                    FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE,
-                    FOREIGN KEY(chapter_id) REFERENCES chapters(chapter_id) ON DELETE CASCADE,
-                    UNIQUE(hash, series_id, chapter_id, page));
-    """
-
     col_list = [
     'hash_id INTEGER PRIMARY KEY',
     'hash BLOB',
     'series_id INTEGER',
     'chapter_id INTEGER',
-    'page INTEGER'
+    'page INTEGER',
+    'FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE',
+    'FOREIGN KEY(chapter_id) REFERENCES chapters(chapter_id) ON DELETE CASCADE',
+    'UNIQUE(hash, series_id, chapter_id, page)'
     ]
+
+    sql = "CREATE TABLE IF NOT EXISTS hashes({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def series_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS series(
-                    series_id INTEGER PRIMARY KEY,
-                    title TEXT,
-                    artist TEXT,
-                    profile BLOB,
-                    series_path BLOB,
-                    is_archive INTEGER,
-                    path_in_archive BLOB,
-                    info TEXT,
-                    fav INTEGER,
-                    type TEXT,
-                    link BLOB,
-                    language TEXT,
-                    rating INTEGER NOT NULL DEFAULT 0,
-                    status TEXT,
-                    pub_date TEXT,
-                    date_added TEXT,
-                    last_read TEXT,
-                    times_read INTEGER,
-                    exed INTEGER NOT NULL DEFAULT 0,
-                    db_v REAL,
-                    view INTEGER DEFAULT 1);
-        """
     col_list = [
         'series_id INTEGER PRIMARY KEY',
         'title TEXT',
@@ -95,22 +65,14 @@ def series_sql(cols=False):
         'db_v REAL',
         'view INTEGER DEFAULT 1'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS series({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def chapters_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS chapters(
-                    chapter_id INTEGER PRIMARY KEY,
-                    series_id INTEGER,
-                    chapter_title TEXT NOT NULL DEFAULT '',
-                    chapter_number INTEGER,
-                    chapter_path BLOB,
-                    pages INTEGER,
-                    in_archive INTEGER,
-                    FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE);
-        """
     col_list = [
         'chapter_id INTEGER PRIMARY KEY',
         'series_id INTEGER',
@@ -119,88 +81,71 @@ def chapters_sql(cols=False):
         'chapter_path BLOB',
         'pages INTEGER',
         'in_archive INTEGER',
+        'FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS chapters({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def namespaces_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS namespaces(
-                    namespace_id INTEGER PRIMARY KEY,
-                    namespace TEXT NOT NULL UNIQUE);
-        """
     col_list = [
         'namespace_id INTEGER PRIMARY KEY',
         'namespace TEXT NOT NULL UNIQUE'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS namespaces({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def tags_sql(cols=False):
-    sql = """
-        CREATE TABLE IF NOT EXISTS tags(
-                    tag_id INTEGER PRIMARY KEY,
-                    tag TEXT NOT NULL UNIQUE);
-        """
     col_list = [
         'tag_id INTEGER PRIMARY KEY',
         'tag TEXT NOT NULL UNIQUE'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS tags({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def tags_mappings_sql(cols=False):
-    sql ="""
-        CREATE TABLE IF NOT EXISTS tags_mappings(
-                    tags_mappings_id INTEGER PRIMARY KEY,
-                    namespace_id INTEGER,
-                    tag_id INTEGER,
-                    FOREIGN KEY(namespace_id) REFERENCES namespaces(namespace_id) ON DELETE CASCADE,
-                    FOREIGN KEY(tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE,
-                    UNIQUE(namespace_id, tag_id));
-        """
     col_list = [
         'tags_mappings_id INTEGER PRIMARY KEY',
         'namespace_id INTEGER',
-        'tag_id INTEGER'
+        'tag_id INTEGER',
+        'FOREIGN KEY(namespace_id) REFERENCES namespaces(namespace_id) ON DELETE CASCADE',
+        'FOREIGN KEY(tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE',
+        'UNIQUE(namespace_id, tag_id)'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS tags_mappings({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def series_tags_mappings_sql(cols=False):
-    sql ="""
-        CREATE TABLE IF NOT EXISTS series_tags_map(
-                    series_id INTEGER,
-                    tags_mappings_id INTEGER,
-                    FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE,
-                    FOREIGN KEY(tags_mappings_id) REFERENCES tags_mappings(tags_mappings_id) ON DELETE CASCADE,
-                    UNIQUE(series_id, tags_mappings_id));
-        """
     col_list = [
         'series_id INTEGER',
-        'tags_mappings_id INTEGER'
+        'tags_mappings_id INTEGER',
+        'FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE',
+        'FOREIGN KEY(tags_mappings_id) REFERENCES tags_mappings(tags_mappings_id) ON DELETE CASCADE',
+        'UNIQUE(series_id, tags_mappings_id)'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS series_tags_map({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def list_sql(cols=False):
-    sql ="""
-        CREATE TABLE IF NOT EXISTS list(
-                    list_id INTEGER PRIMARY KEY,
-                    list_name TEXT NOT NULL DEFAULT '',
-                    list_filter TEXT,
-                    profile BLOB,
-                    type INTEGER DEFAULT 0,
-                    enforce INTEGER DEFAULT 0,
-                    regex INTEGER DEFAULT 0,
-                    l_case INTEGER DEFAULT 0,
-                    strict INTEGER DEFAULT 0);
-        """
     col_list = [
         'list_id INTEGER PRIMARY KEY',
         "list_name TEXT NOT NULL DEFAULT ''",
@@ -212,23 +157,24 @@ def list_sql(cols=False):
         "l_case INTEGER DEFAULT 0",
         "strict INTEGER DEFAULT 0",
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS list({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
 
 def series_list_map_sql(cols=False):
-    sql ="""
-        CREATE TABLE IF NOT EXISTS series_list_map(
-                    list_id INTEGER NOT NULL,
-                    series_id INTEGER INTEGER NOT NULL,
-                    FOREIGN KEY(list_id) REFERENCES list(list_id) ON DELETE CASCADE,
-                    FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE,
-                    UNIQUE(list_id, series_id));
-        """
     col_list = [
         'list_id INTEGER NOT NULL',
         'series_id INTEGER INTEGER NOT NULL',
+        'FOREIGN KEY(list_id) REFERENCES list(list_id) ON DELETE CASCADE',
+        'FOREIGN KEY(series_id) REFERENCES series(series_id) ON DELETE CASCADE',
+        'UNIQUE(list_id, series_id)'
         ]
+
+    sql = "CREATE TABLE IF NOT EXISTS series_list_map({});".format(",".join(col_list))
+
     if cols:
         return sql, col_list
     return sql
@@ -338,7 +284,8 @@ def init_db(path=db_constants.DB_PATH):
         """)
 
         c.execute("""INSERT INTO version(version) VALUES(?)""", (db_constants.CURRENT_DB_VERSION,))
-
+        log_i("Constructing database layout")
+        log_d("Database Layout:\n\t{}".format(STRUCTURE_SCRIPT))
         c.executescript(STRUCTURE_SCRIPT)
 
     def new_db(p, new=False):

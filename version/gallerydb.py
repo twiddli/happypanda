@@ -326,7 +326,7 @@ class GalleryDB(DBBase):
     def modify_gallery(cls, series_id, title=None, profile=None, artist=None, info=None, type=None, fav=None,
                    tags=None, language=None, rating=None, status=None, pub_date=None, link=None,
                    times_read=None, last_read=None, series_path=None, chapters=None, _db_v=None,
-                   hashes=None, exed=None, is_archive=None, path_in_archive=None, view=None):
+                   hashes=None, exed=None, is_archive=None, path_in_archive=None, view=None, date_added=None):
         "Modifies gallery with given gallery id"
         assert isinstance(series_id, int)
         assert not isinstance(series_id, bool)
@@ -378,6 +378,8 @@ class GalleryDB(DBBase):
             executing.append(["UPDATE series SET path_in_archive=? WHERE series_id=?", (path_in_archive, series_id)])
         if view != None:
             executing.append(["UPDATE series SET view=? WHERE series_id=?", (view, series_id)])
+        if date_added != None:
+            executing.append(["UPDATE series SET date_added=? WHERE series_id=?", (date_added, series_id)])
 
         if tags != None:
             assert isinstance(tags, dict)
@@ -481,11 +483,13 @@ class GalleryDB(DBBase):
         assert isinstance(list_of_gallery, list), "Please provide a valid list of galleries to delete"
         for gallery in list_of_gallery:
             if local:
+                app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(gallery.path))
                 if gallery.is_archive:
                     s = delete_path(gallery.path)
                 else:
-                    for chap in gallery.chapters:
-                        path = chap.path
+                    paths = [x.path for x in gallery.chapters]
+                    [app_constants.TEMP_PATH_IGNORE.append(os.path.normcase(x)) for x in paths] # to avoid data race?
+                    for path in paths:
                         s = delete_path(path)
                         if not s:
                             log_e('Failed to delete chapter {}:{}, {}'.format(chap,
@@ -1479,7 +1483,6 @@ class Gallery:
     def __init__(self):
 
         self.id = None # Will be defaulted.
-        self.parent = None
         self.title = ""
         self.profile = ""
         self._path = ""
@@ -1624,7 +1627,7 @@ class Gallery:
                     return True
             else:
                 if app_constants.DEBUG:
-                    print(tag, term)
+                    log_d("{} {}".format(tag, term))
                 if utils.search_term(tag, term, args):
                     return True
             return False
@@ -1669,6 +1672,8 @@ class Gallery:
             term = self.status
         elif ns == 'Artist':
             term = self.artist
+        elif ns == 'Url':
+            term = self.link
         elif ns in ['Descr', 'Description']:
             term = self.info
         elif ns in ['Chapter', 'Chapters']:
@@ -1730,7 +1735,7 @@ class Gallery:
                 if ns:
                     key_word = ['none', 'null']
                     if ns == 'Tag' and tag in key_word:
-                        if not self.tags:
+                        if not self.tags or len(self.tags) == 1 and 'default' in self.tags and not self.tags['default']:
                             return is_exclude
                     elif ns == 'Artist' and tag in key_word:
                         if not self.artist:
@@ -1794,7 +1799,12 @@ class Gallery:
         log_i("Moving gallery...")
         log_d("Old gallery path: {}".format(self.path))
         old_head, old_tail = os.path.split(self.path)
-        self.path = utils.move_files(self.path, new_path)
+        try:
+            self.path = utils.move_files(self.path, new_path)
+        except PermissionError:
+            log.exception("Failed to move gallery")
+            app_constants.NOTIF_BAR.add_text("Permission Error: Failed to move gallery ({})".format(self.title))
+            return
         new_head, new_tail = os.path.split(self.path)
         for chap in self.chapters:
             if not chap.in_archive:
@@ -1816,32 +1826,10 @@ class Gallery:
         return self.id < other.id
 
     def __str__(self):
-        string = """
-        ID: {}
-        Title: {}
-        Profile Path: {}
-        Path: {}
-        Path In Archive: {}
-        Is Archive: {}
-        Author: {}
-        Description: {}
-        Favorite: {}
-        Type: {}
-        Language: {}
-        Status: {}
-        Tags: {}
-        Publication Date: {}
-        Date Added: {}
-        Last Read: {}
-        Times Read: {}
-        Exed: {}
-        Hashes: {}
-
-        Chapters: {}
-        """.format(self.id, self.title, self.profile, self.path.encode(errors='ignore'), self.path_in_archive.encode(errors='ignore'),
-             self.is_archive, self.artist, self.info, self.fav, self.type, self.language, self.status, self.tags,
-             self.pub_date, self.date_added, self.last_read, self.times_read, self.exed, len(self.hashes), self.chapters)
-        return string
+        s = ""
+        for x in sorted(self.__dict__):
+            s += "{:>20}: {:>15}\n".format(x, str(self.__dict__[x]))
+        return s
 
 class Chapter:
     """
@@ -2129,14 +2117,14 @@ class AdminDB(QObject):
 
     def rebuild_database(self):
         "Rebuilds database"
-        log_i("Initiating datbase rebuild")
+        log_i("Initiating database rebuild")
         utils.backup_database()
         log_i("Getting galleries...")
         galleries = GalleryDB.get_all_gallery()
         self.DATA_COUNT.emit(len(galleries))
         db.DBBase._DB_CONN.close()
         log_i("Removing old database...")
-        log_i("Initiating new database...")
+        log_i("Creating new database...")
         temp_db = os.path.join(db_constants.DB_ROOT, "happypanda_temp.db")
         if os.path.exists(temp_db):
             os.remove(temp_db)
