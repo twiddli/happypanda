@@ -1,3 +1,47 @@
+*Happypanda v1.0*
+* New stuff
+	- New GUI look
+	- New helpful color widgets added to `Settings -> Visual` [rachmadaniHaryono]
+	- Gallery Contextmenu:
+		- Added `Set rating` to quickly set gallery rating
+		- Added `Lookup Artist` to open a new tab on preffered site with the artist's galleries
+		- Added `Reset read count` under `Advanced`
+	- Gallery Lists are now included when exporting gallery data
+	- New sorting option: Gallery Rating
+	- It is now possible to also append tags to galleries instead of replacing when editing
+	- New gallery download source: `asmhentai.com` [rachmadaniHaryono]
+	- New [special namespaced tag](https://github.com/Pewpews/happypanda/wiki/Gallery-Searching#special-namespaced-tags): `URL`
+		- Use like this: `url:none` or `url:g.e-hentai`
+	- Many quality of life changes
+
+* Changed stuff
+	- `g.e-hentai` to `e-hentai`
+		- Old URLs will automatically be converted to new on metadata fetch
+	- Displaying rating on galleries is now optional
+	- Improved search history
+	- Improved gallery downloader (now very reliable) [rachmadaniHaryono]
+	- Galleries will automatically be rated 5 stars on favorite
+	- Gallery List edit popup will now appear in the middle of the application
+	- Added a way to relogin into website
+
+* Fixes
+	- E-Hentai login & gallery downloading
+	- `date added` metadata wasn't included when exporting gallery data
+	- `last read` Metadata wasn't included when importing gallery data
+	- backup database name would get unusually long [rachmadaniHaryono]
+	- Fixed HDoujin `info.txt` parsing
+	- Newly downloaded galleries would sometimes cause a crash
+	- Attempting to download exhentai links without being logged in would cause a crash
+	- Using the random gallery opener would in rare cases cause a crash
+	- Moving a gallery would cause a crash from a raised PermissionError exception
+	- Fetching metadata for galleries would return multiple unrelated galleries to choose among
+	- Fetching metadata for galleries with a colored cover whose gallery source is an archive would sometimes cause a crash
+	- Galleries with an empty tag field wouldn't show up on a `tag:none` filter search
+	- Gallery Deleted popup would appear when deleting gallery files from the application
+	- Attempting to download removed galleries would cause a crash
+	- Some gallery importing issues
+
+
 *Happypanda v0.30*
 - Someone finally convinced me into adding star ratings
     - *Note:* Ratings won't be fetched from EH since I find them useless... Though I might make it an option later on. 
