@@ -946,7 +946,7 @@ def title_parser(title):
         try:
             artist = a[0][0].strip()
         except IndexError:
-            raise app_constants.TitleParsingError
+            artist = ''
         parsed_title['artist'] = artist
 
         try:
