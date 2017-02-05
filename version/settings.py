@@ -13,6 +13,8 @@
 #"""
 import json, configparser, os, logging, pickle
 
+from database import db_constants
+
 log = logging.getLogger(__name__)
 log_i = log.info
 log_d = log.debug
@@ -20,12 +22,8 @@ log_w = log.warning
 log_e = log.error
 log_c = log.critical
 
-if os.name == 'posix':
-    settings_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.ini')
-    phappypanda_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.happypanda')
-else:
-    settings_path = 'settings.ini'
-    phappypanda_path = '.happypanda'
+settings_path = os.path.join(db_constants.CONTENT_DIR, 'settings.ini')
+phappypanda_path = os.path.join(db_constants.CONTENT_DIR, '.happypanda')
 
 if not os.path.isfile(settings_path):
     open(settings_path, 'x')

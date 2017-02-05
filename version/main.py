@@ -12,13 +12,14 @@
 #along with Happypanda.  If not, see <http://www.gnu.org/licenses/>.
 #"""
 
-import sys, logging, logging.handlers, os, argparse, platform, scandir
+import sys, logging, logging.handlers, os, platform, scandir
 import traceback
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QFile, Qt
 from PyQt5.QtGui import QFontDatabase
 
+from database.args import args # Note: must be imported first
 from database import db, db_constants
 import app
 import app_constants
@@ -29,34 +30,23 @@ import utils
 def start(test=False):
     app_constants.APP_RESTART_CODE = -123456789
 
-    if os.name == 'posix':
-        main_path = os.path.dirname(os.path.realpath(__file__))
-        log_path = os.path.join(main_path, 'happypanda.log')
-        debug_log_path = os.path.join(main_path, 'happypanda_debug.log')
-    else:
-        log_path = 'happypanda.log'
-        debug_log_path = 'happypanda_debug.log'
+    # Create folder if necessary
+    if not os.path.exists(db_constants.CONTENT_DIR):
+        os.makedirs(db_constants.CONTENT_DIR)
+
+    log_path = os.path.join(db_constants.CONTENT_DIR,'happypanda.log')
+    debug_log_path = os.path.join(db_constants.CONTENT_DIR,'happypanda_debug.log')
+
     if os.path.exists('cacert.pem'):
         os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
 
-    parser = argparse.ArgumentParser(prog='Happypanda',
-                                  description='A manga/doujinshi manager with tagging support')
-    parser.add_argument('-d', '--debug', action='store_true',
-                     help='happypanda_debug_log.log will be created in main directory')
-    parser.add_argument('-v', '--version', action='version',
-                     version='Happypanda v{}'.format(app_constants.vs))
-    parser.add_argument('-e', '--exceptions', action='store_true',
-                     help='Disable custom excepthook')
-    parser.add_argument('-x', '--dev', action='store_true',
-                     help='Development Switch')
-
-    args = parser.parse_args()
     log_handlers = []
     log_level = logging.INFO
+
     if args.dev:
         log_handlers.append(logging.StreamHandler())
     if args.debug:
-        print("happypanda_debug.log created at {}".format(os.getcwd()))
+        print("happypanda_debug.log created at {}".format(debug_log_path))
         # create log
         try:
             with open(debug_log_path, 'x') as f:

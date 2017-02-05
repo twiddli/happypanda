@@ -14,16 +14,17 @@
 
 import os
 
+from .args import args
+
+CONTENT_DIR = os.path.dirname(os.path.realpath(__file__)) if os.name == 'posix' else os.getcwd()
+if args.home:
+    CONTENT_DIR = os.path.expanduser('~/HappypandaBin')
+
 DB_NAME = 'happypanda.db'
 THUMB_NAME = "thumbnails"
-if os.name == 'posix':
-	DB_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../db')
-	THUMBNAIL_PATH = os.path.join(DB_ROOT, THUMB_NAME)
-	DB_PATH = os.path.join(DB_ROOT, DB_NAME)
-else:
-	DB_ROOT = "db"
-	THUMBNAIL_PATH = os.path.join("db", THUMB_NAME)
-	DB_PATH = os.path.join(DB_ROOT, DB_NAME)
+DB_ROOT = os.path.join(CONTENT_DIR, '../db' if not args.home and os.name == 'posix' else 'db')
+THUMBNAIL_PATH = os.path.join(DB_ROOT, THUMB_NAME)
+DB_PATH = os.path.join(DB_ROOT, DB_NAME)
 
 DB_VERSION = [0.26] # a list of accepted db versions. E.g. v3.5 will be backward compatible with v3.1 etc.
 CURRENT_DB_VERSION = DB_VERSION[0]
