@@ -1,0 +1,5 @@
+include README.rst CHANGELOG.rst LICENSE LICENSE-3RD-PARTY res/*
+exclude .gitignore .gitattributes setup.cfg
+prune misc happypanda/tests
+graft res
+global-exclude *.pyc *.DS_STORE
