@@ -19,38 +19,23 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QFile, Qt
 from PyQt5.QtGui import QFontDatabase
 
-from database import db, db_constants
-import app
-import app_constants
-import gallerydb
-import utils
+from happypanda.database.arguments import args
+from happypanda.database import db, db_constants
+from happypanda import app
+from happypanda import app_constants
+from happypanda import gallerydb
+from happypanda import utils
 
 #IMPORTANT STUFF
 def start(test=False):
     app_constants.APP_RESTART_CODE = -123456789
 
-    if os.name == 'posix':
-        main_path = os.path.dirname(os.path.realpath(__file__))
-        log_path = os.path.join(main_path, 'happypanda.log')
-        debug_log_path = os.path.join(main_path, 'happypanda_debug.log')
-    else:
-        log_path = 'happypanda.log'
-        debug_log_path = 'happypanda_debug.log'
+    log_path = os.path.join(db_constants.CONTENT_DIR, 'happypanda.log')
+    debug_log_path = os.path.join(db_constants.CONTENT_DIR, 'happypanda_debug.log')
+
     if os.path.exists('cacert.pem'):
         os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
 
-    parser = argparse.ArgumentParser(prog='Happypanda',
-                                  description='A manga/doujinshi manager with tagging support')
-    parser.add_argument('-d', '--debug', action='store_true',
-                     help='happypanda_debug_log.log will be created in main directory')
-    parser.add_argument('-v', '--version', action='version',
-                     version='Happypanda v{}'.format(app_constants.vs))
-    parser.add_argument('-e', '--exceptions', action='store_true',
-                     help='Disable custom excepthook')
-    parser.add_argument('-x', '--dev', action='store_true',
-                     help='Development Switch')
-
-    args = parser.parse_args()
     log_handlers = []
     log_level = logging.INFO
     if args.dev:
@@ -252,8 +237,11 @@ def start(test=False):
     else:
         return db_upgrade()
 
-if __name__ == '__main__':
+def main():
     current_exit_code = 0
     while current_exit_code == app_constants.APP_RESTART_CODE:
         current_exit_code = start()
     sys.exit(current_exit_code)
+
+if __name__ == '__main__':
+    main()

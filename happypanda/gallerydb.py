@@ -27,15 +27,15 @@ from dateutil import parser as dateparser
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTime
 
-from utils import (today, ArchiveFile, generate_img_hash, delete_path,
+from happypanda.utils import (today, ArchiveFile, generate_img_hash, delete_path,
                      ARCHIVE_FILES, get_gallery_img, IMG_FILES)
-from database import db_constants
-from database import db
-from database.db import DBBase
-from executors import Executors
+from happypanda.database import db_constants
+from happypanda.database import db
+from happypanda.database.db import DBBase
+from happypanda.executors import Executors
 
-import app_constants
-import utils
+from happypanda import app_constants
+from happypanda import utils
 
 log = logging.getLogger(__name__)
 log_i = log.info

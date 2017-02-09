@@ -15,38 +15,38 @@
 import os, sys, enum
 import qtawesome as qta
 
-try:
-    import settings
-    from database import db_constants
-except ImportError:
-    from . import settings
-    from .database import db_constants
+from happypanda import settings
+from happypanda.database.arguments import args
+from happypanda.database import db_constants
 
 # Version number
 vs  = '1.0'
 DEBUG = False
 
-OS_NAME = ''
 if sys.platform.startswith('darwin'):
-	OS_NAME = "darwin"
+    OS_NAME = "darwin"
 elif os.name == 'nt':
-	OS_NAME = "windows"
+    OS_NAME = "windows"
+    import ctypes
+    myappid = 'Pewpews.Happypanda.1.0'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 elif os.name == 'posix':
-	OS_NAME = "linux"
+    OS_NAME = "linux"
 
 APP_RESTART_CODE = 0
 
 get = settings.get
 
-posix_program_dir = os.path.dirname(os.path.realpath(__file__))
-if os.name == 'posix':
-	 static_dir = os.path.join(posix_program_dir, '../res')
-	 bin_dir = os.path.join(posix_program_dir, 'bin')
-	 temp_dir = os.path.join(posix_program_dir, 'temp')
-else:
-	bin_dir = os.path.join(os.getcwd(), 'bin')
-	static_dir = os.path.join(os.getcwd(), "res")
-	temp_dir = os.path.join('temp')
+static_dir = os.path.join(db_constants.CONTENT_DIR, 'res')
+
+if args.home and os.path.isdir(static_dir) is False or os.path.isdir(static_dir) is False:
+    if OS_NAME == "windows":
+        static_dir = os.path.join(os.path.abspath(__file__), 'res').replace("app_constants.py\\", "")
+    else:
+        static_dir = os.path.join(os.path.abspath(__file__), 'res').replace("app_constants.py/", "")
+
+bin_dir = os.path.join(db_constants.CONTENT_DIR, 'bin')
+temp_dir = os.path.join(db_constants.CONTENT_DIR, 'temp')
 # path to unrar tool binary
 unrar_tool_path = get('', 'Application', 'unrar tool path')
 
@@ -239,7 +239,7 @@ USE_GALLERY_LINK = get(True, 'Web', 'use gallery link', bool)
 USE_JPN_TITLE = get(False, 'Web', 'use jpn title', bool)
 CONTINUE_AUTO_METADATA_FETCHER = get(True, 'Web', 'continue auto metadata fetcher', bool)
 HEN_DOWNLOAD_TYPE = get(DOWNLOAD_TYPE_ARCHIVE, 'Web', 'hen download type', int)
-DOWNLOAD_DIRECTORY = get('downloads', 'Web', 'download directory', str)
+DOWNLOAD_DIRECTORY = get('{}/downloads'.format(db_constants.CONTENT_DIR), 'Web', 'download directory', str)
 TORRENT_CLIENT = get('', 'Web', 'torrent client', str)
 HEN_LIST = get(['chaikahen'], 'Web', 'hen list', list)
 DOWNLOAD_GALLERY_TO_LIB = get(False, 'Web', 'download galleries to library', bool)
@@ -670,7 +670,7 @@ TROUBLE_GUIDE =\
 <ol>
 <li>First close all instances of Happypanda.</li>
 <li>Open a command prompt *(terminal in <em>nix)</em> and navigate to where Happypanda is installed. <em>Eg.: <code>cd path/to/happypanda</code></em></li>
-<li>Now type the name of the main executable with a <code>-d</code> following, <em>eg.: <code>happypanda.exe -d</code> or <code>main.py -d</code> if you’re running from source.</em></li>
+<li>Now type the name of the main executable with a <code>-d</code> following, <em>eg.: <code>happypanda -d</code> or <code>main.py -d</code> if you’re running from source.</em></li>
 <li>The program will now open and create a new file named <code>happypanda_debug.log</code></li>
 <li>Now you try to reproduce the error/bug</li>
 </ol>

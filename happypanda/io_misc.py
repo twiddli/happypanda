@@ -13,14 +13,14 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout,
                              QTableWidget, QTableWidgetItem, QPlainTextEdit,
                              QShortcut, QMenu, qApp)
 
-import app_constants
-import misc
-import gallerydb
-import utils
-import pewnet
-import settings
-import fetch
-from asm_manager import AsmManager
+from happypanda import app_constants
+from happypanda import misc
+from happypanda import gallerydb
+from happypanda import utils
+from happypanda import pewnet
+from happypanda import settings
+from happypanda import fetch
+from happypanda.asm_manager import AsmManager
 
 log = logging.getLogger(__name__)
 log_i = log.info

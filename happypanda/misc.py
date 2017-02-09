@@ -51,14 +51,14 @@ from PyQt5.QtWidgets import (QWidget, QProgressBar, QLabel,
                              QTableWidgetItem, QTableView, QSplitter,
                              QSplitterHandle, QStyledItemDelegate, QStyleOption)
 
-from utils import (tag_to_string, tag_to_dict, title_parser, ARCHIVE_FILES,
+from happypanda.utils import (tag_to_string, tag_to_dict, title_parser, ARCHIVE_FILES,
                      ArchiveFile, IMG_FILES)
-from executors import Executors
-import utils
-import app_constants
-import gallerydb
-import fetch
-import settings
+from happypanda.executors import Executors
+from happypanda import utils
+from happypanda import app_constants
+from happypanda import gallerydb
+from happypanda import fetch
+from happypanda import settings
 
 log = logging.getLogger(__name__)
 log_i = log.info

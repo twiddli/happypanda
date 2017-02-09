@@ -2,8 +2,8 @@
 import logging
 from pprint import pformat
 
-from app_constants import DOWNLOAD_TYPE_OTHER, VALID_GALLERY_CATEGORY
-from pewnet import (
+from happypanda.app_constants import DOWNLOAD_TYPE_OTHER, VALID_GALLERY_CATEGORY
+from happypanda.pewnet import (
     DLManager as DLManagerObject,
     Downloader as DownloaderObject,
     HenItem,

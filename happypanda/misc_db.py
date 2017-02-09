@@ -25,11 +25,11 @@ from PyQt5.QtCore import (Qt, QTimer, pyqtSignal, QRect, QSize, QEasingCurve,
 from PyQt5.QtGui import (QIcon, QStandardItem, QFont, QPainter, QColor, QBrush,
                          QPixmap, QPalette)
 
-import gallerydb
-import app_constants
-import utils
-import misc
-import gallery
+from happypanda import gallerydb
+from happypanda import app_constants
+from happypanda import utils
+from happypanda import misc
+from happypanda import gallery
 
 log = logging.getLogger(__name__)
 log_i = log.info

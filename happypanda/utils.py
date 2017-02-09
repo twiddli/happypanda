@@ -32,12 +32,8 @@ import time
 from PyQt5.QtGui import QImage, qRgba
 from PIL import Image,ImageChops
 
-try:
-    import app_constants
-    from database import db_constants
-except:
-    from . import app_constants
-    from .database import db_constants
+from happypanda import app_constants
+from happypanda.database import db_constants
 
 log = logging.getLogger(__name__)
 log_i = log.info

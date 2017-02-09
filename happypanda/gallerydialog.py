@@ -8,13 +8,13 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QDesktopWidget, QGroupBox,
                              QCheckBox, QSizePolicy, QSpinBox)
 from PyQt5.QtCore import (pyqtSignal, Qt, QPoint, QDate, QThread, QTimer)
 
-import app_constants
-import utils
-import gallerydb
-import fetch
-import misc
-import database
-import settings
+from happypanda import app_constants
+from happypanda import utils
+from happypanda import gallerydb
+from happypanda import fetch
+from happypanda import misc
+from happypanda import database
+from happypanda import settings
 
 log = logging.getLogger(__name__)
 log_i = log.info

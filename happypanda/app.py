@@ -37,21 +37,21 @@ from PyQt5.QtWidgets import (QMainWindow, QListView,
                              QShortcut, QGraphicsBlurEffect, QTableWidget,
                              QTableWidgetItem, QActionGroup)
 
-from executors import Executors
+from happypanda.executors import Executors
 
-import app_constants
-import misc
-import gallery
-import io_misc
-import settingsdialog
-import gallerydialog
-import fetch
-import gallerydb
-import settings
-import pewnet
-import utils
-import misc_db
-import database
+from happypanda import app_constants
+from happypanda import misc
+from happypanda import gallery
+from happypanda import io_misc
+from happypanda import settingsdialog
+from happypanda import gallerydialog
+from happypanda import fetch
+from happypanda import gallerydb
+from happypanda import settings
+from happypanda import pewnet
+from happypanda import utils
+from happypanda import misc_db
+from happypanda import database
 
 log = logging.getLogger(__name__)
 log_i = log.info

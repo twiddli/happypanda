@@ -15,7 +15,7 @@
 import os, sqlite3, threading, queue
 import logging, time, shutil
 
-from . import db_constants
+from happypanda.database import db_constants
 log = logging.getLogger(__name__)
 log_i = log.info
 log_d = log.debug

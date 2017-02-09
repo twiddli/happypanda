@@ -45,13 +45,13 @@ from PyQt5.QtWidgets import (QListView, QFrame, QLabel,
                              QWidget, QHeaderView, QTableView, QApplication,
                              QMessageBox, QActionGroup, QScroller, QStackedLayout)
 
-from executors import Executors
-import gallerydb
-import app_constants
-import misc
-import gallerydialog
-import io_misc
-import utils
+from happypanda.executors import Executors
+from happypanda import gallerydb
+from happypanda import app_constants
+from happypanda import misc
+from happypanda import gallerydialog
+from happypanda import io_misc
+from happypanda import utils
 
 log = logging.getLogger(__name__)
 log_i = log.info

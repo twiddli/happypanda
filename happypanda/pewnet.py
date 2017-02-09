@@ -35,10 +35,10 @@ from robobrowser.exceptions import RoboError
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-import app_constants
-import utils
-import settings
-from utils import makedirs_if_not_exists
+from happypanda import app_constants
+from happypanda import utils
+from happypanda import settings
+from happypanda.utils import makedirs_if_not_exists
 
 log = logging.getLogger(__name__)
 log_i = log.info

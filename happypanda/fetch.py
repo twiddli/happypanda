@@ -17,11 +17,11 @@ import re as regex
 
 from PyQt5.QtCore import QObject, pyqtSignal # need this for interaction with main thread
 
-from gallerydb import Gallery, GalleryDB, HashDB, execute
-import app_constants
-import pewnet
-import settings
-import utils
+from happypanda.gallerydb import Gallery, GalleryDB, HashDB, execute
+from happypanda import app_constants
+from happypanda import pewnet
+from happypanda import settings
+from happypanda import utils
 
 """This file contains functions to fetch gallery data"""
 

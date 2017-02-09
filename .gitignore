@@ -13,7 +13,6 @@ happypanda/dist
 settings.json
 build
 dist
-Happypanda
 *.ini
 *.swp
 .DS_Store
@@ -232,7 +231,6 @@ FakesAssemblies/
 /deploy.bat
 /Attameaikko.01.zip
 /[Yamatogawa] Power Play!.zip
-/[Yamatogawa] Power Play!.zip
 *.zip
 /res/typicons
 /res/gallery_ext_ico.ico
@@ -246,3 +244,4 @@ FakesAssemblies/
 /.vs/config/applicationhost.config
 /data/happypanda.db
 /main.spec
+/Happypanda.egg-info/
