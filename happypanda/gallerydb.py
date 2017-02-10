@@ -28,7 +28,7 @@ from dateutil import parser as dateparser
 from PyQt5.QtCore import QObject, pyqtSignal, QTime
 
 from happypanda.utils import (today, ArchiveFile, generate_img_hash, delete_path,
-                     ARCHIVE_FILES, get_gallery_img, IMG_FILES)
+                              ARCHIVE_FILES, get_gallery_img, IMG_FILES)
 from happypanda.database import db_constants
 from happypanda.database import db
 from happypanda.database.db import DBBase

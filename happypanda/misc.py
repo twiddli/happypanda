@@ -52,7 +52,7 @@ from PyQt5.QtWidgets import (QWidget, QProgressBar, QLabel,
                              QSplitterHandle, QStyledItemDelegate, QStyleOption)
 
 from happypanda.utils import (tag_to_string, tag_to_dict, title_parser, ARCHIVE_FILES,
-                     ArchiveFile, IMG_FILES)
+                              ArchiveFile, IMG_FILES)
 from happypanda.executors import Executors
 from happypanda import utils
 from happypanda import app_constants

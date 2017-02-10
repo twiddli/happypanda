@@ -14,6 +14,7 @@
 
 import os, sys, enum
 import qtawesome as qta
+import ctypes
 
 from happypanda import settings
 from happypanda.database.arguments import args
@@ -27,8 +28,7 @@ if sys.platform.startswith('darwin'):
     OS_NAME = "darwin"
 elif os.name == 'nt':
     OS_NAME = "windows"
-    import ctypes
-    myappid = 'Pewpews.Happypanda.1.0'
+    myappid = 'Pewpews.Happypanda.{}'.format(vs)
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 elif os.name == 'posix':
     OS_NAME = "linux"
