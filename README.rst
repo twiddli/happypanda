@@ -55,6 +55,18 @@ Install from PYPI or see `INSTALL.md <https://github.com/Pewpews/happypanda/blob
 PYPI
 ^^^^^^^^^^^^^
 ``pip install happypanda`` (thanks `@Evolution0 <https://github.com/Evolution0>`__)
+and then run with ``happypanda --home``
+
+Note: use of the ``--home`` flag will make happypanda create required files and directories at:
+
+On windows:
+``'C:\Users\YourName\AppData\Local\Pewpew\Happypanda'``
+
+On mac:
+``'/Users/YourName/Library/Application Support/Happypanda'``
+
+On linux:
+``'/home/YourName/.local/share/Happypanda'``
 
 
 Updating
