@@ -94,7 +94,7 @@ def start(test=False):
         QApplication.setEffectEnabled(effect)
 
     application = QApplication(sys.argv)
-    application.setOrganizationName('Pewpews')
+    application.setOrganizationName('Pewpew')
     application.setOrganizationDomain('https://github.com/Pewpews/happypanda')
     application.setApplicationName('Happypanda')
     application.setApplicationDisplayName('Happypanda')

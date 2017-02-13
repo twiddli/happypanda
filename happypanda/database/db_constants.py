@@ -18,7 +18,7 @@ from appdirs import user_data_dir
 
 from happypanda.database.arguments import args
 
-appauthor = "Pewpews"
+appauthor = "Pewpew"
 appname = "Happypanda"
 version = "1.0"
 
