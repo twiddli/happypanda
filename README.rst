@@ -50,13 +50,24 @@ Windows
 Mac and Linux
 ^^^^^^^^^^^^^
 
-see `INSTALL.rst <INSTALL.rst>`__
+Install from PYPI or see `INSTALL.md <https://github.com/Pewpews/happypanda/blob/master/INSTALL.md>`__
+
+PYPI
+^^^^^^^^^^^^^
+``pip install happypanda`` (thanks `@Evolution0 <https://github.com/Evolution0>`__)
+
 
 Updating
 ========
 
 | Overwrite your previous installation.
 | More info in the `wiki <https://github.com/Pewpews/happypanda/wiki>`__
+
+
+PYPI
+^^^^^^^^^^^^^
+``pip install --upgrade happypanda``
+
 
 Misc.
 =====
