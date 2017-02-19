@@ -23,7 +23,7 @@ except ImportError:
     from .database import db_constants
 
 # Version number
-vs  = '1.0'
+vs  = '1.1'
 DEBUG = False
 
 OS_NAME = ''
