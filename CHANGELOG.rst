@@ -1,3 +1,7 @@
+*Happypanda v1.1*
+- Fixes
+   - Fixed HP settings unusable without internet connection
+
 *Happypanda v1.0*
 
 -  New stuff

@@ -21,7 +21,7 @@ from happypanda.database.arguments import args
 from happypanda.database import db_constants
 
 # Version number
-vs  = '1.0'
+vs  = '1.1'
 DEBUG = False
 
 if sys.platform.startswith('darwin'):

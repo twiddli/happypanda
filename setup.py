@@ -25,7 +25,7 @@ if name != "posix" and maxsize > 2**32 is False:
 
 setup(
     name='Happypanda',
-    version='1.0',
+    version='1.1',
     description='A cross platform manga/doujinshi manager with namespace & tag support',
     long_description=open('README.rst').read(),
     url='https://github.com/Pewpews/happypanda',
