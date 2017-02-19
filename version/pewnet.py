@@ -1222,7 +1222,10 @@ class EHen(CommenHen):
                 s = requests.Session()
                 s.cookies.update(cookies)
                 s.headers.update(cls.HEADERS)
-                r = cls.handle_error(cls, s.get('https://exhentai.org/'), wait=False)
+                try:
+                    r = cls.handle_error(cls, s.get('https://exhentai.org/'), wait=False)
+                except requests.ConnectionError:
+                    return 0;
                 if r:
                     custom['login'] = 2 # access to ex
                 if r is None:
