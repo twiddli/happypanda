@@ -521,7 +521,7 @@ class AppWindow(QMainWindow):
         self.tab_manager.library_btn.click()
         self.tab_manager.library_btn.clicked.connect(lambda: switch_view(False))
 
-        self.addition_tab = self.tab_manager.addTab("Inbox", app_constants.ViewType.Addition, icon=app_constants.INBOX_ICON, allow_sidebarwidget=True)
+        self.addition_tab = self.tab_manager.addTab("Inbox", app_constants.ViewType.Addition, icon=app_constants.INBOX_ICON)
 
         gallery_k = QKeySequence('Alt+G')
         new_gallery_k = QKeySequence('Ctrl+N')
