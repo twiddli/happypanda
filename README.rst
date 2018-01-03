@@ -1,5 +1,7 @@
     Note: Work on this program has been halted in favor of its successor
-    HappypandaX (bugs and such won't be fixed)
+    [HappyPanda X](https://github.com/happypandax/server) (bugs and such won't be fixed)
+    
+    Follow me on twitter to keep up to date with HPX [![Twitter Follow](https://img.shields.io/twitter/follow/pewspew.svg?style=social&label=Follow)](https://twitter.com/pewspew)
 
 This is a cross platform manga/doujinshi manager with namespace & tag
 support.
